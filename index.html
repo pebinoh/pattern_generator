@@ -3,230 +3,546 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zipworks Clone - Qualité HD</title>
+    <title>Générateur de Pattern</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
     <style>
-        :root { --bg: #ffffff; --ui-bg: #ffffff; --border: #eeeeee; }
-        body { font-family: -apple-system, system-ui, sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; background: #fff; }
+        :root {
+            --primary: #333;
+            --accent: #4a90e2; /* Couleur style lien/bouton */
+            --bg: #ffffff;
+            --gray-light: #f5f5f5;
+            --border: #ddd;
+        }
 
-        /* --- Sidebar Gauche --- */
-        .sidebar { width: 300px; padding: 40px; border-right: 1px solid var(--border); overflow-y: auto; }
-        h1 { font-size: 2.5rem; margin: 0; font-weight: 800; letter-spacing: -1.5px; }
-        .desc { font-size: 0.95rem; line-height: 1.5; color: #333; margin-top: 20px; }
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            color: var(--primary);
+            background: var(--bg);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
 
-        /* --- Zone Centrale (Le Rendu 3D) --- */
-        .preview-container { flex-grow: 1; position: relative; background: #fff; display: flex; flex-direction: column; }
-        #canvas-3d { width: 100%; height: 100%; outline: none; }
-        .preview-label { position: absolute; top: 20px; width: 100%; text-align: center; font-style: italic; color: #888; font-size: 0.9rem; }
-        .rotation-icon { position: absolute; top: 45px; left: 50%; transform: translateX(-50%); width: 30px; opacity: 0.6; }
+        /* --- Layout --- */
+        .sidebar {
+            width: 35%;
+            padding: 40px;
+            overflow-y: auto;
+            border-right: 1px solid var(--border);
+            background: #fdfdfd;
+        }
 
-        .bottom-ui { position: absolute; bottom: 40px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 20px; }
-        .vol-display { font-size: 0.9rem; color: #555; }
-        .btn-generate { background: #e0e0e0; border: none; padding: 12px 40px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        .main-app {
+            width: 65%;
+            display: flex;
+            position: relative;
+        }
 
-        /* --- Sidebar Droite --- */
-        .sidebar-right { width: 320px; padding: 30px; border-left: 1px solid var(--border); }
-        .control-group { margin-bottom: 20px; position: relative; }
-        label { display: flex; align-items: center; font-size: 0.85rem; font-weight: bold; margin-bottom: 8px; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box; }
-        .row { display: flex; gap: 10px; }
+        .viewer-3d {
+            flex: 1;
+            background: #fff;
+            position: relative;
+            cursor: grab;
+        }
 
-        /* Tooltips */
-        .info-i { background: #eee; border-radius: 50%; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; margin-left: 5px; cursor: help; position: relative; }
-        .info-i:hover::after { content: attr(data-text); position: absolute; bottom: 25px; right: 0; background: #333; color: #fff; padding: 10px; border-radius: 5px; width: 180px; font-weight: normal; font-size: 12px; z-index: 100; }
+        .controls-panel {
+            width: 300px;
+            padding: 30px;
+            background: #fff;
+            border-left: 1px solid var(--border);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
 
-        /* Fenêtre Modale HD */
-        .modal-bg { position: fixed; inset: 0; background: rgba(255,255,255,0.9); display: none; align-items: center; justify-content: center; z-index: 1000; }
-        .modal { background: #fff; border: 1px solid #eee; padding: 30px; border-radius: 8px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.1); width: 500px; }
-        #pattern-preview { width: 100%; border: 1px solid #eee; margin: 20px 0; }
+        /* --- Typography & Elements --- */
+        h1 { font-size: 2.5rem; letter-spacing: -1px; margin-bottom: 10px; }
+        h2 { font-size: 1.2rem; margin-top: 30px; margin-bottom: 10px; }
+        p { line-height: 1.6; color: #555; font-size: 0.95rem; }
+        strong { color: #000; }
+        a { color: var(--primary); text-decoration: underline; cursor: pointer; }
+
+        /* --- Form Elements --- */
+        .control-group { margin-bottom: 15px; }
+        .control-group label {
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .input-row { display: flex; gap: 10px; }
+        .input-wrapper { flex: 1; }
+        
+        input[type="number"], select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        input[type="range"] { width: 100%; cursor: pointer; }
+
+        /* --- Tooltip (le petit 'i') --- */
+        .info-icon {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: 16px;
+            height: 16px;
+            background: #eee;
+            color: #666;
+            border-radius: 50%;
+            font-size: 10px;
+            margin-left: 8px;
+            cursor: help;
+            position: relative;
+            font-style: normal;
+            font-weight: bold;
+        }
+
+        .info-icon:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            z-index: 100;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* --- Button --- */
+        .btn-generate {
+            background: linear-gradient(to bottom, #fff, #f9f9f9);
+            border: 1px solid var(--border);
+            padding: 15px;
+            width: 100%;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+            margin-top: auto;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .btn-generate:hover { background: #f0f0f0; border-color: #ccc; }
+
+        /* --- Units Toggle --- */
+        .units-toggle { display: flex; border: 1px solid var(--border); border-radius: 4px; width: fit-content; margin-bottom: 20px;}
+        .unit-opt { padding: 5px 15px; font-size: 0.9rem; cursor: pointer; }
+        .unit-opt.active { background: #eee; font-weight: 600; }
+
+        /* --- MODAL (Génération) --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none; justify-content: center; align-items: center;
+            z-index: 1000;
+        }
+        .modal {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            width: 500px;
+            max-width: 90%;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        .modal h2 { margin-top: 0; }
+        .close-modal {
+            position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #999;
+        }
+        canvas {
+            border: 1px dashed #ddd;
+            margin: 20px 0;
+            max-width: 100%;
+        }
+        .btn-download {
+            background: #333; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-size: 1rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn-download:hover { background: #555; }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            body { flex-direction: column; overflow: auto; height: auto; }
+            .sidebar, .main-app { width: 100%; }
+            .main-app { flex-direction: column-reverse; height: 800px; }
+            .controls-panel { width: 100%; border-left: none; border-top: 1px solid var(--border); }
+        }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <h1>zipworks</h1>
-        <div class="desc">
-            <strong>Pattern Generator</strong><br><br>
-            Outil de création de patron pour pochette zippée.<br><br>
-            <small>Logiciel en beta. Vérifiez vos calculs.</small>
-        </div>
+        <h1>Générateur de pattern</h1>
+        <p>
+            Cet outil vous permet de créer un patron de couture simple pour une pochette/sac avec fermeture éclair sur le dessus.
+            Personnalisez-le en ajoutant des onglets, poches, poignées ou étiquettes pour en faire votre propre création.
+        </p>
+
+        <h2>Comment ça marche ?</h2>
+        <p>
+            Configurer un projet avec ce générateur est simple et rapide. Visualisez le rendu en 3D à droite et ajustez les dimensions.
+        </p>
+        <p>
+            L'aperçu en fil de fer (wireframe) vous montre la structure exacte. La ligne bleue représente la fermeture éclair.
+        </p>
+
+        <h2>C'est gratuit ?</h2>
+        <p>
+            C'est un projet passion. Si vous voulez soutenir le développement, partagez cet outil !
+        </p>
+
+        <h2>Avertissement</h2>
+        <p style="font-size: 0.85rem; color: #777;">
+            Ce logiciel est en version bêta, vérifiez toujours vos calculs avant de couper le tissu. Signalez les bugs si vous en trouvez.
+        </p>
     </div>
 
-    <div class="preview-container">
-        <div class="preview-label">360° Preview</div>
-        <svg class="rotation-icon" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm-6 8c0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3c-3.31 0-6-2.69-6-6z" fill="#888"/></svg>
+    <div class="main-app">
         
-        <canvas id="canvas-3d"></canvas>
-        
-        <div class="bottom-ui">
-            <div class="vol-display" id="vol-text">Volume: 0.00L</div>
-            <button class="btn-generate" onclick="generateHD()">Generate pattern!</button>
-        </div>
-    </div>
-
-    <div class="sidebar sidebar-right">
-        <div class="control-group"><label>Units: <strong>cm</strong></label></div>
-        
-        <div class="control-group">
-            <label>Construction <span class="info-i" data-text="1 panneau: tissu plié au fond. 2 panneaux: couture au fond.">ⓘ</span></label>
-            <select id="construction">
-                <option value="1">1 Panel</option>
-                <option value="2">2 Panels</option>
-            </select>
-        </div>
-
-        <div class="control-group">
-            <label>Length (Top / Bottom)</label>
-            <div class="row">
-                <input type="number" id="lenTop" value="20">
-                <input type="number" id="lenBot" value="20">
+        <div class="viewer-3d" id="scene-container">
+            <div style="position: absolute; top: 20px; width: 100%; text-align: center; color: #999; pointer-events: none;">
+                360° Aperçu <br> ↻
+            </div>
+            <div style="position: absolute; bottom: 20px; width: 100%; text-align: center; font-family: monospace;" id="volume-display">
+                Volume: 0.0L
             </div>
         </div>
 
-        <div class="control-group">
-            <label>Width</label>
-            <input type="number" id="width" value="6">
-        </div>
+        <div class="controls-panel">
+            
+            <div class="control-group">
+                <label>Unités</label>
+                <div class="units-toggle">
+                    <div class="unit-opt">in</div>
+                    <div class="unit-opt active">cm</div>
+                </div>
+            </div>
 
-        <div class="control-group">
-            <label>Height</label>
-            <input type="number" id="height" value="12">
-        </div>
+            <div class="control-group">
+                <label>Construction <i class="info-icon" data-tooltip="Type de structure (1 pièce pliée ou 2 panneaux)">i</i></label>
+                <select id="construction">
+                    <option value="1">1 Panneau</option>
+                    <option value="2">2 Panneaux</option>
+                </select>
+            </div>
 
-        <div class="control-group">
-            <label>Seam allowance <span class="info-i" data-text="Valeur de couture à ajouter tout autour (cm).">ⓘ</span></label>
-            <input type="number" id="seam" value="1" step="0.1">
-        </div>
+            <div class="control-group">
+                <label>Longueur</label>
+                <div class="input-row">
+                    <div class="input-wrapper">
+                        <span style="font-size:0.8rem; color:#888;">Haut</span>
+                        <input type="number" id="lenTop" value="20" step="0.5">
+                    </div>
+                    <div class="input-wrapper">
+                        <span style="font-size:0.8rem; color:#888;">Bas</span>
+                        <input type="number" id="lenBot" value="20" step="0.5">
+                    </div>
+                </div>
+            </div>
 
-        <div class="control-group">
-            <label>Zipper width <span class="info-i" data-text="Largeur de la fermeture éclair sur le dessus.">ⓘ</span></label>
-            <input type="number" id="zipW" value="2.5" step="0.1">
-        </div>
+            <div class="control-group">
+                <label>Largeur (Profondeur) <i class="info-icon" data-tooltip="Épaisseur de la pochette">i</i></label>
+                <input type="number" id="width" value="8" step="0.5">
+            </div>
 
-        <div class="control-group">
-            <label>Zipper reach <span class="info-i" data-text="Pourcentage de longueur occupé par le zip.">ⓘ</span></label>
-            <input type="range" id="zipR" min="10" max="100" value="90">
+            <div class="control-group">
+                <label>Hauteur <i class="info-icon" data-tooltip="Hauteur verticale finale">i</i></label>
+                <input type="number" id="height" value="12" step="0.5">
+            </div>
+
+            <div class="control-group">
+                <label>Marge de couture <i class="info-icon" data-tooltip="Espace ajouté pour la couture">i</i></label>
+                <input type="number" id="seam" value="1" step="0.1">
+            </div>
+
+            <div class="control-group">
+                <label>Largeur Zip <i class="info-icon" data-tooltip="Largeur totale de la bande zip">i</i></label>
+                <input type="number" id="zipWidth" value="3" step="0.1">
+            </div>
+
+            <div class="control-group">
+                <label>Descente Zip <i class="info-icon" data-tooltip="Jusqu'où descend la fermeture sur les côtés">i</i></label>
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #888; margin-bottom: 5px;">
+                    <span>0%</span><span>100%</span>
+                </div>
+                <input type="range" id="zipReach" min="0" max="100" value="50">
+            </div>
+
+            <button class="btn-generate" onclick="openModal()">Générer le patron !</button>
         </div>
     </div>
 
-    <div class="modal-bg" id="modal">
+    <div class="modal-overlay" id="modalOverlay">
         <div class="modal">
-            <h3>Pattern successfully generated!</h3>
-            <canvas id="pattern-preview"></canvas>
-            <a id="dl-link" style="display:block; background:#000; color:#fff; padding:15px; text-decoration:none; border-radius:4px; font-weight:bold;">Download full size PNG</a>
-            <p style="font-size:11px; color:#888; margin-top:15px;">Le fichier est optimisé pour une impression nette.</p>
-            <button onclick="document.getElementById('modal').style.display='none'" style="margin-top:10px; border:none; background:none; cursor:pointer; color:#888;">Close</button>
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h2>Patron généré avec succès !</h2>
+            
+            <canvas id="patternCanvas" width="400" height="300"></canvas>
+            
+            <button class="btn-download" onclick="downloadPattern()">
+                <span>⬇ Télécharger le patron (PNG)</span>
+            </button>
+            
+            <p style="font-size: 0.8rem; color: #888; margin-top: 15px;">
+                Vérifiez toujours les cotes sur le tissu avant de couper.
+            </p>
         </div>
     </div>
 
     <script>
-        const canvas = document.getElementById('canvas-3d');
+        // --- THREE.JS SETUP ---
+        const container = document.getElementById('scene-container');
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xffffff);
+        scene.background = new THREE.Color(0xffffff); // Fond blanc
 
-        const camera = new THREE.PerspectiveCamera(35, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
-        camera.position.set(30, 20, 40);
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(30, 20, 30);
 
-        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-        // --- FIX QUALITÉ 3D : Gestion du Pixel Ratio pour la netteté ---
-        renderer.setPixelRatio(window.devicePixelRatio);
-        
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        container.appendChild(renderer.domElement);
+
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 1.0;
 
-        const group = new THREE.Group();
-        scene.add(group);
+        // Groupes pour les objets
+        const bagGroup = new THREE.Group();
+        scene.add(bagGroup);
 
-        // Lumières pour un rendu propre
-        scene.add(new THREE.AmbientLight(0xffffff, 0.9));
-        const light = new THREE.DirectionalLight(0xffffff, 0.3);
-        light.position.set(10, 20, 10);
-        scene.add(light);
+        // Variables globales
+        let inputs = {};
 
-        function update3D() {
-            while(group.children.length > 0) group.remove(group.children[0]);
+        function getInputs() {
+            return {
+                lTop: parseFloat(document.getElementById('lenTop').value) || 0,
+                lBot: parseFloat(document.getElementById('lenBot').value) || 0,
+                w: parseFloat(document.getElementById('width').value) || 0,
+                h: parseFloat(document.getElementById('height').value) || 0,
+                reach: parseInt(document.getElementById('zipReach').value) || 0
+            };
+        }
 
-            const L = parseFloat(document.getElementById('lenTop').value) || 10;
-            const W = parseFloat(document.getElementById('width').value) || 5;
-            const H = parseFloat(document.getElementById('height').value) || 10;
-            const ZR = parseFloat(document.getElementById('zipR').value) / 100;
-            const ZW = parseFloat(document.getElementById('zipW').value) || 0;
-
-            // Création de la boîte (Mesh blanc propre)
-            const geometry = new THREE.BoxGeometry(L, H, W);
-            const material = new THREE.MeshPhongMaterial({ 
-                color: 0xffffff, 
-                transparent: true, 
-                opacity: 0.8,
-                polygonOffset: true,
-                polygonOffsetFactor: 1,
-                polygonOffsetUnits: 1
-            });
-            const pouch = new THREE.Mesh(geometry, material);
-            group.add(pouch);
-
-            // --- FIX LIGNES : EdgesGeometry pour des traits noirs nets ---
-            const edges = new THREE.EdgesGeometry(geometry);
-            const lineMat = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
-            const wireframe = new THREE.LineSegments(edges, lineMat);
-            group.add(wireframe);
-
-            // Visualisation de la fermeture (Fente sur le dessus)
-            if (ZW > 0) {
-                const zGeo = new THREE.PlaneGeometry(L * ZR, ZW);
-                const zMat = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide });
-                const zip = new THREE.Mesh(zGeo, zMat);
-                zip.rotation.x = Math.PI / 2;
-                zip.position.y = H / 2 + 0.01;
-                group.add(zip);
+        // --- FONCTION DE DESSIN 3D ---
+        function updateGeometry() {
+            // Nettoyer l'ancien dessin
+            while(bagGroup.children.length > 0){ 
+                let obj = bagGroup.children[0];
+                if(obj.geometry) obj.geometry.dispose();
+                if(obj.material) obj.material.dispose();
+                bagGroup.remove(obj); 
             }
 
-            document.getElementById('vol-text').innerText = `Volume: ${(L*W*H/1000).toFixed(2)}L`;
+            const { lTop, lBot, w, h, reach } = getInputs();
+            const wHalf = w / 2;
+            const hHalf = h / 2;
+
+            // Définition des 8 coins de la boîte (Trapèze si Top != Bot)
+            // Haut: y = +hHalf, Bas: y = -hHalf
+            
+            const v = {
+                tfl: new THREE.Vector3(-lTop/2, hHalf, wHalf), // Top Front Left
+                tfr: new THREE.Vector3(lTop/2, hHalf, wHalf),  // Top Front Right
+                tbl: new THREE.Vector3(-lTop/2, hHalf, -wHalf),// Top Back Left
+                tbr: new THREE.Vector3(lTop/2, hHalf, -wHalf), // Top Back Right
+                bfl: new THREE.Vector3(-lBot/2, -hHalf, wHalf),// Bottom Front Left
+                bfr: new THREE.Vector3(lBot/2, -hHalf, wHalf), // Bottom Front Right
+                bbl: new THREE.Vector3(-lBot/2, -hHalf, -wHalf),// Bottom Back Left
+                bbr: new THREE.Vector3(lBot/2, -hHalf, -wHalf) // Bottom Back Right
+            };
+
+            // Création des lignes de contour (Wireframe)
+            const points = [
+                v.tfl, v.tfr, v.tfr, v.tbr, v.tbr, v.tbl, v.tbl, v.tfl, // Top Loop
+                v.bfl, v.bfr, v.bfr, v.bbr, v.bbr, v.bbl, v.bbl, v.bfl, // Bottom Loop
+                v.tfl, v.bfl, v.tfr, v.bfr, v.tbr, v.bbr, v.tbl, v.bbl  // Vertical posts
+            ];
+
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const material = new THREE.LineBasicMaterial({ color: 0x333333 });
+            const wireframe = new THREE.LineSegments(geometry, material);
+            bagGroup.add(wireframe);
+
+            // --- ZIPPER VISUALIZATION ---
+            // Le zip est sur le dessus (Top Front & Top Back edges)
+            // Et descend sur les côtés selon le "reach"
+            
+            // Calcul de la descente (interpolation linéaire entre Top et Bottom corners)
+            const rRatio = reach / 100;
+            
+            // Points de descente (Gauche et Droite)
+            const zipEndL = new THREE.Vector3().lerpVectors(v.tfl, v.bfl, rRatio); // Front Left Down
+            const zipEndR = new THREE.Vector3().lerpVectors(v.tfr, v.bfr, rRatio); // Front Right Down
+            // Pour simplifier l'affichage 3D, on montre le zip au milieu du top
+            
+            // On va dessiner une ligne bleue épaisse qui représente le zip
+            const zipPoints = [];
+            
+            // Trajet Zip : Descend gauche -> Coin Haut Gauche -> Coin Haut Droit -> Descend Droit
+            // Note: Simplification visuelle pour le wireframe
+            
+            // Coté gauche vertical
+            zipPoints.push(new THREE.Vector3().lerpVectors(v.tbl, v.bbl, rRatio)); // Back Left Down
+            zipPoints.push(v.tbl);
+            // Traversée haut (centre ?) Non, généralement zip est au milieu de la largeur W
+            // Faisons une ligne au milieu du top plane
+            const midTL = new THREE.Vector3(-lTop/2, hHalf, 0);
+            const midTR = new THREE.Vector3(lTop/2, hHalf, 0);
+            const midDownL = new THREE.Vector3().lerpVectors(midTL, new THREE.Vector3(-lBot/2, -hHalf, 0), rRatio);
+            const midDownR = new THREE.Vector3().lerpVectors(midTR, new THREE.Vector3(lBot/2, -hHalf, 0), rRatio);
+
+            const zipGeo = new THREE.BufferGeometry().setFromPoints([midDownL, midTL, midTR, midDownR]);
+            const zipMat = new THREE.LineBasicMaterial({ color: 0x4a90e2, linewidth: 3 });
+            // Note: linewidth ne marche pas toujours sur WebGL Windows, donc on fait un TubeGeometry pour être sûr d'avoir de l'épaisseur si besoin, mais Line est plus simple/perf.
+            const zipLine = new THREE.Line(zipGeo, zipMat);
+            bagGroup.add(zipLine);
+
+            // Affichage Volume (approx V = L*W*H / 1000 pour Litres)
+            // Moyenne des aires haut et bas pour approximation trapèze
+            const areaTop = lTop * w;
+            const areaBot = lBot * w;
+            const volCm3 = ((areaTop + areaBot)/2) * h;
+            const volL = (volCm3 / 1000).toFixed(2);
+            document.getElementById('volume-display').innerText = `Volume: ${volL}L`;
         }
 
-        // --- GÉNÉRATION PNG HD ---
-        function generateHD() {
-            const p = document.getElementById('pattern-preview');
-            const ctx = p.getContext('2d');
-            const L = parseFloat(document.getElementById('lenTop').value);
-            const W = parseFloat(document.getElementById('width').value);
-            const H = parseFloat(document.getElementById('height').value);
-            const S = parseFloat(document.getElementById('seam').value);
-
-            const totalW = L + W + (2*S);
-            const totalH = H + (W/2) + (2*S);
-            const PPCM = 80; // Résolution élevée
-
-            p.width = totalW * PPCM;
-            p.height = totalH * PPCM;
-
-            ctx.fillStyle = "#fff"; ctx.fillRect(0,0,p.width,p.height);
-            ctx.strokeStyle = "#000"; ctx.lineWidth = 5;
-
-            const w = p.width; const h = p.height; const c = (W/2)*PPCM;
-            ctx.beginPath();
-            ctx.moveTo(0,0); ctx.lineTo(w,0); ctx.lineTo(w, h-c);
-            ctx.lineTo(w-c, h-c); ctx.lineTo(w-c, h); ctx.lineTo(c, h);
-            ctx.lineTo(c, h-c); ctx.lineTo(0, h-c); ctx.closePath(); ctx.stroke();
-
-            document.getElementById('dl-link').href = p.toDataURL("image/png");
-            document.getElementById('modal').style.display = "flex";
-        }
-
+        // Animation Loop
         function animate() {
             requestAnimationFrame(animate);
             controls.update();
-            const w = canvas.clientWidth, h = canvas.clientHeight;
-            if (canvas.width !== w || canvas.height !== h) {
-                renderer.setSize(w, h, false);
-                camera.aspect = w / h; camera.updateProjectionMatrix();
-            }
             renderer.render(scene, camera);
         }
+        animate();
+        updateGeometry();
 
-        document.querySelectorAll('input, select').forEach(i => i.addEventListener('input', update3D));
-        update3D(); animate();
+        // Listeners sur les inputs
+        document.querySelectorAll('input').forEach(el => {
+            el.addEventListener('input', updateGeometry);
+        });
+
+        // Resize handler
+        window.addEventListener('resize', () => {
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            renderer.setSize(width, height);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+        });
+
+        // --- MODAL & 2D PATTERN ---
+        const modal = document.getElementById('modalOverlay');
+        const cvs = document.getElementById('patternCanvas');
+        const ctx = cvs.getContext('2d');
+
+        function openModal() {
+            modal.style.display = 'flex';
+            drawPattern2D();
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+
+        // Fermer si on clique dehors
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+        function drawPattern2D() {
+            const { lTop, h, w, reach } = getInputs();
+            const seam = parseFloat(document.getElementById('seam').value) || 0;
+            
+            // Reset canvas
+            ctx.clearRect(0, 0, cvs.width, cvs.height);
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(0,0, cvs.width, cvs.height);
+            
+            // Calculs simplifiés pour le dessin schématique (Forme en L vue de profil/panneau)
+            // On dessine une représentation schématique comme sur la capture
+            
+            const scale = 20; // Scale factor pour affichage
+            const padX = 50;
+            const padY = 50;
+            
+            // Dimensions pour le dessin
+            // Rectangle principal (Hauteur x Largeur/2 + marge ?)
+            // Pour reproduire la capture, dessinons un L inversé qui représente:
+            // Barre verticale : Hauteur + Fond/2
+            // Barre horizontale : Longueur/2
+            
+            const drawH = (h + (w/2)) * scale;
+            const drawL = (lTop/2) * scale;
+            
+            ctx.strokeStyle = "#333";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            // Point de départ (Haut Gauche)
+            let x = padX;
+            let y = padY;
+            
+            // Forme en L (schématique d'un quart de patron)
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + drawL, y); // Top
+            ctx.lineTo(x + drawL, y + (h*scale)); // Coté interieur
+            ctx.lineTo(x + drawL + (w/2*scale), y + (h*scale)); // Fond extension
+            ctx.lineTo(x + drawL + (w/2*scale), y + drawH); // Bas
+            ctx.lineTo(x, y + drawH); // Retour gauche
+            ctx.closePath();
+            ctx.stroke();
+
+            // Remplissage léger
+            ctx.fillStyle = "#f0f0f0";
+            ctx.fill();
+
+            // Annotations (Dimensions)
+            ctx.fillStyle = "#000";
+            ctx.font = "12px Inter";
+            
+            // Cote Haut
+            ctx.fillText(`${(lTop/2 + seam).toFixed(1)} cm`, x + drawL/2, y - 10);
+            
+            // Cote Hauteur
+            ctx.fillText(`${(h + seam).toFixed(1)} cm`, x - 35, y + (h*scale)/2);
+            
+            // Cote Fond
+            ctx.fillText(`${(w/2 + seam).toFixed(1)}`, x + drawL + 5, y + drawH + 15);
+
+            // Points de repère zip
+            ctx.fillStyle = "blue";
+            ctx.beginPath();
+            ctx.arc(x + drawL, y + (h*scale * (reach/100)), 3, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.fillText("Zip Stop", x + drawL + 5, y + (h*scale * (reach/100)));
+        }
+
+        function downloadPattern() {
+            const link = document.createElement('a');
+            link.download = 'patron-couture.png';
+            link.href = cvs.toDataURL();
+            link.click();
+        }
     </script>
 </body>
 </html>
