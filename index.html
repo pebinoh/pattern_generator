@@ -11,10 +11,11 @@
     <style>
         :root {
             --primary: #333;
-            --accent: #4a90e2; /* Couleur style lien/bouton */
+            --accent: #4a90e2;
             --bg: #ffffff;
             --gray-light: #f5f5f5;
             --border: #ddd;
+            --seam-color: rgba(74, 144, 226, 0.5); /* Couleur marge couture */
         }
 
         body {
@@ -92,7 +93,7 @@
 
         input[type="range"] { width: 100%; cursor: pointer; }
 
-        /* --- Tooltip (le petit 'i') --- */
+        /* --- Tooltip --- */
         .info-icon {
             display: inline-flex;
             justify-content: center;
@@ -142,12 +143,7 @@
         }
         .btn-generate:hover { background: #f0f0f0; border-color: #ccc; }
 
-        /* --- Units Toggle --- */
-        .units-toggle { display: flex; border: 1px solid var(--border); border-radius: 4px; width: fit-content; margin-bottom: 20px;}
-        .unit-opt { padding: 5px 15px; font-size: 0.9rem; cursor: pointer; }
-        .unit-opt.active { background: #eee; font-weight: 600; }
-
-        /* --- MODAL (Génération) --- */
+        /* --- MODAL --- */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.5);
@@ -195,20 +191,17 @@
             Cet outil vous permet de créer un patron de couture simple pour une pochette/sac avec fermeture éclair sur le dessus.
             Personnalisez-le en ajoutant des onglets, poches, poignées ou étiquettes pour en faire votre propre création.
         </p>
-
         <h2>Comment ça marche ?</h2>
         <p>
             Configurer un projet avec ce générateur est simple et rapide. Visualisez le rendu en 3D à droite et ajustez les dimensions.
         </p>
         <p>
-            L'aperçu en fil de fer (wireframe) vous montre la structure exacte. La ligne bleue représente la fermeture éclair.
+            L'aperçu en fil de fer (wireframe) vous montre la structure exacte. La bande hachurée représente la fermeture éclair, et les lignes bleues indiquent la marge de couture.
         </p>
-
         <h2>C'est gratuit ?</h2>
         <p>
             C'est un projet passion. Si vous voulez soutenir le développement, partagez cet outil !
         </p>
-
         <h2>Avertissement</h2>
         <p style="font-size: 0.85rem; color: #777;">
             Ce logiciel est en version bêta, vérifiez toujours vos calculs avant de couper le tissu. Signalez les bugs si vous en trouvez.
@@ -216,7 +209,6 @@
     </div>
 
     <div class="main-app">
-        
         <div class="viewer-3d" id="scene-container">
             <div style="position: absolute; top: 20px; width: 100%; text-align: center; color: #999; pointer-events: none;">
                 360° Aperçu <br> ↻
@@ -228,19 +220,16 @@
 
         <div class="controls-panel">
             
-            <div class="control-group">
-                <label>Unités</label>
-                <div class="units-toggle">
-                    <div class="unit-opt">in</div>
-                    <div class="unit-opt active">cm</div>
-                </div>
+            <div class="control-group" style="display: flex; align-items: center; gap: 10px;">
+                <label style="margin-bottom: 0;">Unité :</label>
+                <span style="font-weight: 600; background: #eee; padding: 5px 10px; border-radius: 4px;">cm</span>
             </div>
 
             <div class="control-group">
-                <label>Construction <i class="info-icon" data-tooltip="Type de structure (1 pièce pliée ou 2 panneaux)">i</i></label>
+                <label>Construction <i class="info-icon" data-tooltip="Type de structure (1 pièce pliée ou 2 panneaux cousus)">i</i></label>
                 <select id="construction">
-                    <option value="1">1 Panneau</option>
-                    <option value="2">2 Panneaux</option>
+                    <option value="1">1 Panneau (Pli au fond)</option>
+                    <option value="2">2 Panneaux (Couture au fond)</option>
                 </select>
             </div>
 
@@ -249,33 +238,33 @@
                 <div class="input-row">
                     <div class="input-wrapper">
                         <span style="font-size:0.8rem; color:#888;">Haut</span>
-                        <input type="number" id="lenTop" value="20" step="0.5">
+                        <input type="number" id="lenTop" value="20" step="0.5" min="1">
                     </div>
                     <div class="input-wrapper">
                         <span style="font-size:0.8rem; color:#888;">Bas</span>
-                        <input type="number" id="lenBot" value="20" step="0.5">
+                        <input type="number" id="lenBot" value="20" step="0.5" min="1">
                     </div>
                 </div>
             </div>
 
             <div class="control-group">
                 <label>Largeur (Profondeur) <i class="info-icon" data-tooltip="Épaisseur de la pochette">i</i></label>
-                <input type="number" id="width" value="8" step="0.5">
+                <input type="number" id="width" value="8" step="0.5" min="1">
             </div>
 
             <div class="control-group">
                 <label>Hauteur <i class="info-icon" data-tooltip="Hauteur verticale finale">i</i></label>
-                <input type="number" id="height" value="12" step="0.5">
+                <input type="number" id="height" value="12" step="0.5" min="1">
             </div>
 
             <div class="control-group">
-                <label>Marge de couture <i class="info-icon" data-tooltip="Espace ajouté pour la couture">i</i></label>
-                <input type="number" id="seam" value="1" step="0.1">
+                <label>Marge de couture <i class="info-icon" data-tooltip="Espace ajouté pour la couture (visualisé en bleu)">i</i></label>
+                <input type="number" id="seam" value="1" step="0.1" min="0">
             </div>
 
             <div class="control-group">
-                <label>Largeur Zip <i class="info-icon" data-tooltip="Largeur totale de la bande zip">i</i></label>
-                <input type="number" id="zipWidth" value="3" step="0.1">
+                <label>Largeur Zip <i class="info-icon" data-tooltip="Largeur totale de la bande zip (visualisée en hachuré)">i</i></label>
+                <input type="number" id="zipWidth" value="3" step="0.1" min="0.5">
             </div>
 
             <div class="control-group">
@@ -295,14 +284,14 @@
             <span class="close-modal" onclick="closeModal()">&times;</span>
             <h2>Patron généré avec succès !</h2>
             
-            <canvas id="patternCanvas" width="400" height="300"></canvas>
+            <canvas id="patternCanvas" width="500" height="400"></canvas>
             
             <button class="btn-download" onclick="downloadPattern()">
                 <span>⬇ Télécharger le patron (PNG)</span>
             </button>
             
             <p style="font-size: 0.8rem; color: #888; margin-top: 15px;">
-                Vérifiez toujours les cotes sur le tissu avant de couper.
+                Vérifiez toujours les cotes sur le tissu avant de couper. Le dessin inclut la marge de couture.
             </p>
         </div>
     </div>
@@ -311,10 +300,10 @@
         // --- THREE.JS SETUP ---
         const container = document.getElementById('scene-container');
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xffffff); // Fond blanc
+        scene.background = new THREE.Color(0xffffff);
 
         const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-        camera.position.set(30, 20, 30);
+        camera.position.set(30, 30, 40); // Ajuster la position de la caméra
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
@@ -323,101 +312,192 @@
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.autoRotate = true;
-        controls.autoRotateSpeed = 1.0;
+        controls.autoRotateSpeed = 0.8;
 
-        // Groupes pour les objets
         const bagGroup = new THREE.Group();
         scene.add(bagGroup);
 
-        // Variables globales
-        let inputs = {};
-
+        // Fonction pour récupérer les inputs
         function getInputs() {
             return {
-                lTop: parseFloat(document.getElementById('lenTop').value) || 0,
-                lBot: parseFloat(document.getElementById('lenBot').value) || 0,
-                w: parseFloat(document.getElementById('width').value) || 0,
-                h: parseFloat(document.getElementById('height').value) || 0,
-                reach: parseInt(document.getElementById('zipReach').value) || 0
+                lTop: Math.max(0.1, parseFloat(document.getElementById('lenTop').value) || 0),
+                lBot: Math.max(0.1, parseFloat(document.getElementById('lenBot').value) || 0),
+                w: Math.max(0.1, parseFloat(document.getElementById('width').value) || 0),
+                h: Math.max(0.1, parseFloat(document.getElementById('height').value) || 0),
+                seam: Math.max(0, parseFloat(document.getElementById('seam').value) || 0),
+                zW: Math.max(0.1, parseFloat(document.getElementById('zipWidth').value) || 0),
+                reach: parseInt(document.getElementById('zipReach').value) || 0,
+                construction: document.getElementById('construction').value
             };
+        }
+
+        // Fonction utilitaire pour créer des lignes
+        function createLine(p1, p2, color, dashed = false, opacity = 1) {
+            const points = [p1, p2];
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            let material;
+            if (dashed) {
+                material = new THREE.LineDashedMaterial({ color: color, linewidth: 1, scale: 1, dashSize: 1, gapSize: 0.5, opacity: opacity, transparent: true });
+            } else {
+                material = new THREE.LineBasicMaterial({ color: color, linewidth: 1, opacity: opacity, transparent: true });
+            }
+            const line = new THREE.Line(geometry, material);
+            if (dashed) line.computeLineDistances();
+            return line;
         }
 
         // --- FONCTION DE DESSIN 3D ---
         function updateGeometry() {
-            // Nettoyer l'ancien dessin
+            // Nettoyage
             while(bagGroup.children.length > 0){ 
                 let obj = bagGroup.children[0];
                 if(obj.geometry) obj.geometry.dispose();
-                if(obj.material) obj.material.dispose();
+                if(obj.material) {
+                    if(Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+                    else obj.material.dispose();
+                }
                 bagGroup.remove(obj); 
             }
 
-            const { lTop, lBot, w, h, reach } = getInputs();
+            const { lTop, lBot, w, h, seam, zW, reach, construction } = getInputs();
             const wHalf = w / 2;
             const hHalf = h / 2;
+            const rRatio = reach / 100;
 
-            // Définition des 8 coins de la boîte (Trapèze si Top != Bot)
-            // Haut: y = +hHalf, Bas: y = -hHalf
-            
+            // Sommets principaux (Sac fini)
             const v = {
-                tfl: new THREE.Vector3(-lTop/2, hHalf, wHalf), // Top Front Left
-                tfr: new THREE.Vector3(lTop/2, hHalf, wHalf),  // Top Front Right
-                tbl: new THREE.Vector3(-lTop/2, hHalf, -wHalf),// Top Back Left
-                tbr: new THREE.Vector3(lTop/2, hHalf, -wHalf), // Top Back Right
-                bfl: new THREE.Vector3(-lBot/2, -hHalf, wHalf),// Bottom Front Left
-                bfr: new THREE.Vector3(lBot/2, -hHalf, wHalf), // Bottom Front Right
-                bbl: new THREE.Vector3(-lBot/2, -hHalf, -wHalf),// Bottom Back Left
-                bbr: new THREE.Vector3(lBot/2, -hHalf, -wHalf) // Bottom Back Right
+                tfl: new THREE.Vector3(-lTop/2, hHalf, wHalf), tfr: new THREE.Vector3(lTop/2, hHalf, wHalf),
+                tbl: new THREE.Vector3(-lTop/2, hHalf, -wHalf), tbr: new THREE.Vector3(lTop/2, hHalf, -wHalf),
+                bfl: new THREE.Vector3(-lBot/2, -hHalf, wHalf), bfr: new THREE.Vector3(lBot/2, -hHalf, wHalf),
+                bbl: new THREE.Vector3(-lBot/2, -hHalf, -wHalf), bbr: new THREE.Vector3(lBot/2, -hHalf, -wHalf)
             };
 
-            // Création des lignes de contour (Wireframe)
-            const points = [
-                v.tfl, v.tfr, v.tfr, v.tbr, v.tbr, v.tbl, v.tbl, v.tfl, // Top Loop
-                v.bfl, v.bfr, v.bfr, v.bbr, v.bbr, v.bbl, v.bbl, v.bfl, // Bottom Loop
-                v.tfl, v.bfl, v.tfr, v.bfr, v.tbr, v.bbr, v.tbl, v.bbl  // Vertical posts
-            ];
+            // --- WIREFRAME PRINCIPAL ---
+            const mainColor = 0x333333;
+            // Haut (Toujours continu)
+            bagGroup.add(createLine(v.tfl, v.tfr, mainColor)); bagGroup.add(createLine(v.tfr, v.tbr, mainColor));
+            bagGroup.add(createLine(v.tbr, v.tbl, mainColor)); bagGroup.add(createLine(v.tbl, v.tfl, mainColor));
+            // Bas (Continu si 1 Panneau, Pointillé si 2 Panneaux)
+            const bottomDashed = construction === "2";
+            bagGroup.add(createLine(v.bfl, v.bfr, mainColor, bottomDashed)); bagGroup.add(createLine(v.bfr, v.bbr, mainColor, bottomDashed));
+            bagGroup.add(createLine(v.bbr, v.bbl, mainColor, bottomDashed)); bagGroup.add(createLine(v.bbl, v.bfl, mainColor, bottomDashed));
+            // Verticaux (Toujours continus)
+            bagGroup.add(createLine(v.tfl, v.bfl, mainColor)); bagGroup.add(createLine(v.tfr, v.bfr, mainColor));
+            bagGroup.add(createLine(v.tbr, v.bbr, mainColor)); bagGroup.add(createLine(v.tbl, v.bbl, mainColor));
 
-            const geometry = new THREE.BufferGeometry().setFromPoints(points);
-            const material = new THREE.LineBasicMaterial({ color: 0x333333 });
-            const wireframe = new THREE.LineSegments(geometry, material);
-            bagGroup.add(wireframe);
+            // --- MARGE DE COUTURE (Visualisation) ---
+            if (seam > 0) {
+                const seamColor = 0x4a90e2;
+                const seamOpacity = 0.5;
+                
+                // On décale les sommets vers l'extérieur pour la marge
+                // Simplification : on agrandit la boîte de 'seam' dans toutes les directions pertinentes
+                const vs = {
+                    tfl: new THREE.Vector3(-lTop/2 - seam, hHalf + seam, wHalf + seam), tfr: new THREE.Vector3(lTop/2 + seam, hHalf + seam, wHalf + seam),
+                    tbl: new THREE.Vector3(-lTop/2 - seam, hHalf + seam, -wHalf - seam), tbr: new THREE.Vector3(lTop/2 + seam, hHalf + seam, -wHalf - seam),
+                    bfl: new THREE.Vector3(-lBot/2 - seam, -hHalf - seam, wHalf + seam), bfr: new THREE.Vector3(lBot/2 + seam, -hHalf - seam, wHalf + seam),
+                    bbl: new THREE.Vector3(-lBot/2 - seam, -hHalf - seam, -wHalf - seam), bbr: new THREE.Vector3(lBot/2 + seam, -hHalf - seam, -wHalf - seam)
+                };
+                
+                // Dessin de la "boîte" de marge
+                // Haut
+                bagGroup.add(createLine(vs.tfl, vs.tfr, seamColor, false, seamOpacity)); bagGroup.add(createLine(vs.tfr, vs.tbr, seamColor, false, seamOpacity));
+                bagGroup.add(createLine(vs.tbr, vs.tbl, seamColor, false, seamOpacity)); bagGroup.add(createLine(vs.tbl, vs.tfl, seamColor, false, seamOpacity));
+                // Bas
+                bagGroup.add(createLine(vs.bfl, vs.bfr, seamColor, false, seamOpacity)); bagGroup.add(createLine(vs.bfr, vs.bbr, seamColor, false, seamOpacity));
+                bagGroup.add(createLine(vs.bbr, vs.bbl, seamColor, false, seamOpacity)); bagGroup.add(createLine(vs.bbl, vs.bfl, seamColor, false, seamOpacity));
+                // Verticaux
+                bagGroup.add(createLine(vs.tfl, vs.bfl, seamColor, false, seamOpacity)); bagGroup.add(createLine(vs.tfr, vs.bfr, seamColor, false, seamOpacity));
+                bagGroup.add(createLine(vs.tbr, vs.bbr, seamColor, false, seamOpacity)); bagGroup.add(createLine(vs.tbl, vs.bbl, seamColor, false, seamOpacity));
+            }
 
-            // --- ZIPPER VISUALIZATION ---
-            // Le zip est sur le dessus (Top Front & Top Back edges)
-            // Et descend sur les côtés selon le "reach"
-            
-            // Calcul de la descente (interpolation linéaire entre Top et Bottom corners)
-            const rRatio = reach / 100;
-            
-            // Points de descente (Gauche et Droite)
-            const zipEndL = new THREE.Vector3().lerpVectors(v.tfl, v.bfl, rRatio); // Front Left Down
-            const zipEndR = new THREE.Vector3().lerpVectors(v.tfr, v.bfr, rRatio); // Front Right Down
-            // Pour simplifier l'affichage 3D, on montre le zip au milieu du top
-            
-            // On va dessiner une ligne bleue épaisse qui représente le zip
-            const zipPoints = [];
-            
-            // Trajet Zip : Descend gauche -> Coin Haut Gauche -> Coin Haut Droit -> Descend Droit
-            // Note: Simplification visuelle pour le wireframe
-            
-            // Coté gauche vertical
-            zipPoints.push(new THREE.Vector3().lerpVectors(v.tbl, v.bbl, rRatio)); // Back Left Down
-            zipPoints.push(v.tbl);
-            // Traversée haut (centre ?) Non, généralement zip est au milieu de la largeur W
-            // Faisons une ligne au milieu du top plane
-            const midTL = new THREE.Vector3(-lTop/2, hHalf, 0);
-            const midTR = new THREE.Vector3(lTop/2, hHalf, 0);
-            const midDownL = new THREE.Vector3().lerpVectors(midTL, new THREE.Vector3(-lBot/2, -hHalf, 0), rRatio);
-            const midDownR = new THREE.Vector3().lerpVectors(midTR, new THREE.Vector3(lBot/2, -hHalf, 0), rRatio);
 
-            const zipGeo = new THREE.BufferGeometry().setFromPoints([midDownL, midTL, midTR, midDownR]);
-            const zipMat = new THREE.LineBasicMaterial({ color: 0x4a90e2, linewidth: 3 });
-            // Note: linewidth ne marche pas toujours sur WebGL Windows, donc on fait un TubeGeometry pour être sûr d'avoir de l'épaisseur si besoin, mais Line est plus simple/perf.
-            const zipLine = new THREE.Line(zipGeo, zipMat);
-            bagGroup.add(zipLine);
+            // --- ZIPPER VISUALIZATION (Bande Hachurée) ---
+            // Le zip suit le contour du haut et descend sur les côtés.
+            // On va créer un ruban (Mesh) qui suit ce chemin.
 
-            // Affichage Volume (approx V = L*W*H / 1000 pour Litres)
-            // Moyenne des aires haut et bas pour approximation trapèze
+            const zHalf = zW / 2;
+            const zipPath = new THREE.CurvePath();
+
+            // Points de fin de descente
+            const zipEndL = new THREE.Vector3().lerpVectors(v.tfl, v.bfl, rRatio);
+            const zipEndR = new THREE.Vector3().lerpVectors(v.tfr, v.bfr, rRatio);
+            const zipEndBL = new THREE.Vector3().lerpVectors(v.tbl, v.bbl, rRatio);
+            const zipEndBR = new THREE.Vector3().lerpVectors(v.tbr, v.bbr, rRatio);
+
+            // Chemin central du zip (sur le dessus)
+            // Montée Gauche -> Coin Haut Gauche -> Traversée Haut -> Coin Haut Droit -> Descente Droite
+            // Pour simplifier et avoir un ruban plat sur le dessus, on définit le chemin sur le plan Y=hHalf
+            // Et les descentes verticales sur les plans X=-lTop/2 et X=lTop/2
+            
+            const pointsPath = [];
+            if (rRatio > 0) pointsPath.push(new THREE.Vector3(-lTop/2, v.tfl.y - h*rRatio, 0)); // Point bas gauche milieu
+            pointsPath.push(new THREE.Vector3(-lTop/2, hHalf, 0)); // Milieu coté haut gauche
+            pointsPath.push(new THREE.Vector3(lTop/2, hHalf, 0)); // Milieu coté haut droit
+            if (rRatio > 0) pointsPath.push(new THREE.Vector3(lTop/2, v.tfr.y - h*rRatio, 0)); // Point bas droit milieu
+
+            const path = new THREE.CatmullRomCurve3(pointsPath, false, 'catmullrom', 0.1);
+
+            // Création de la géométrie du ruban
+            const tubularSegments = 64;
+            const radius = zHalf;
+            const radialSegments = 2; // Ruban plat
+            const closed = false;
+            
+            // On utilise ExtrudeGeometry avec une forme plate rectangle pour faire le ruban
+            const shape = new THREE.Shape();
+            shape.moveTo(-zHalf, 0); shape.lineTo(zHalf, 0); shape.lineTo(zHalf, 0.1); shape.lineTo(-zHalf, 0.1); shape.closePath();
+
+            const extrudeSettings = { steps: tubularSegments, bevelEnabled: false, extrudePath: path };
+            const zipGeometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+
+            // Matériau hachuré (Texture procédurale simple ou motif)
+            // Pour faire simple et sans image externe, on utilise un motif de lignes
+            const canvas = document.createElement('canvas');
+            canvas.width = 64; canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 64, 64);
+            ctx.strokeStyle = '#888'; ctx.lineWidth = 4;
+            for (let i = -64; i < 128; i += 16) {
+                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + 64, 64); ctx.stroke();
+            }
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(10, 1);
+
+            const zipMaterial = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
+            const zipMesh = new THREE.Mesh(zipGeometry, zipMaterial);
+            
+            // Orienter le ruban pour qu'il soit plat sur le dessus
+            // C'est complexe avec ExtrudeGeometry le long d'un chemin 3D.
+            // Simplification : On dessine juste une bande plate sur le dessus, et des bandes verticales sur les côtés.
+
+            // Bande Dessus
+            const topZipGeo = new THREE.PlaneGeometry(lTop, zW);
+            const topZipMesh = new THREE.Mesh(topZipGeo, zipMaterial);
+            topZipMesh.rotation.x = -Math.PI / 2;
+            topZipMesh.position.set(0, hHalf + 0.05, 0); // Légèrement au dessus
+            bagGroup.add(topZipMesh);
+
+            // Bandes Côtés (si reach > 0)
+            if (rRatio > 0) {
+                const sideH = h * rRatio;
+                const sideZipGeo = new THREE.PlaneGeometry(zW, sideH);
+                
+                // Côté Gauche
+                const leftZip = new THREE.Mesh(sideZipGeo, zipMaterial);
+                leftZip.rotation.y = -Math.PI / 2;
+                leftZip.position.set(-lTop/2 - 0.05, hHalf - sideH/2, 0);
+                bagGroup.add(leftZip);
+
+                // Côté Droit
+                const rightZip = new THREE.Mesh(sideZipGeo, zipMaterial);
+                rightZip.rotation.y = Math.PI / 2;
+                rightZip.position.set(lTop/2 + 0.05, hHalf - sideH/2, 0);
+                bagGroup.add(rightZip);
+            }
+
+            // Affichage Volume
             const areaTop = lTop * w;
             const areaBot = lBot * w;
             const volCm3 = ((areaTop + areaBot)/2) * h;
@@ -434,12 +514,12 @@
         animate();
         updateGeometry();
 
-        // Listeners sur les inputs
-        document.querySelectorAll('input').forEach(el => {
+        // Listeners
+        document.querySelectorAll('input, select').forEach(el => {
             el.addEventListener('input', updateGeometry);
+            el.addEventListener('change', updateGeometry);
         });
 
-        // Resize handler
         window.addEventListener('resize', () => {
             const width = container.clientWidth;
             const height = container.clientHeight;
@@ -451,7 +531,7 @@
         // --- MODAL & 2D PATTERN ---
         const modal = document.getElementById('modalOverlay');
         const cvs = document.getElementById('patternCanvas');
-        const ctx = cvs.getContext('2d');
+        const ctx2d = cvs.getContext('2d'); // Renommé pour éviter conflit avec texture zip
 
         function openModal() {
             modal.style.display = 'flex';
@@ -462,79 +542,110 @@
             modal.style.display = 'none';
         }
 
-        // Fermer si on clique dehors
         window.onclick = function(event) {
-            if (event.target == modal) {
-                closeModal();
-            }
+            if (event.target == modal) closeModal();
         }
 
         function drawPattern2D() {
-            const { lTop, h, w, reach } = getInputs();
-            const seam = parseFloat(document.getElementById('seam').value) || 0;
+            const { lTop, h, w, seam, zW, reach } = getInputs();
             
             // Reset canvas
-            ctx.clearRect(0, 0, cvs.width, cvs.height);
-            ctx.fillStyle = "#fff";
-            ctx.fillRect(0,0, cvs.width, cvs.height);
+            ctx2d.clearRect(0, 0, cvs.width, cvs.height);
+            ctx2d.fillStyle = "#fff";
+            ctx2d.fillRect(0,0, cvs.width, cvs.height);
             
-            // Calculs simplifiés pour le dessin schématique (Forme en L vue de profil/panneau)
-            // On dessine une représentation schématique comme sur la capture
+            const scale = 15; 
+            const padX = 60;
+            const padY = 60;
             
-            const scale = 20; // Scale factor pour affichage
-            const padX = 50;
-            const padY = 50;
+            // Dimensions totales avec marges
+            const totalH = h + w/2 + seam*2;
+            const totalW = lTop/2 + seam*2; // On dessine la moitié (quart de patron)
+
+            const drawH = totalH * scale;
+            const drawW = totalW * scale;
+            const sScale = seam * scale; // Marge à l'échelle
+
+            const x = padX;
+            const y = padY;
             
-            // Dimensions pour le dessin
-            // Rectangle principal (Hauteur x Largeur/2 + marge ?)
-            // Pour reproduire la capture, dessinons un L inversé qui représente:
-            // Barre verticale : Hauteur + Fond/2
-            // Barre horizontale : Longueur/2
-            
-            const drawH = (h + (w/2)) * scale;
-            const drawL = (lTop/2) * scale;
-            
-            ctx.strokeStyle = "#333";
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            
-            // Point de départ (Haut Gauche)
-            let x = padX;
-            let y = padY;
-            
-            // Forme en L (schématique d'un quart de patron)
-            ctx.moveTo(x, y);
-            ctx.lineTo(x + drawL, y); // Top
-            ctx.lineTo(x + drawL, y + (h*scale)); // Coté interieur
-            ctx.lineTo(x + drawL + (w/2*scale), y + (h*scale)); // Fond extension
-            ctx.lineTo(x + drawL + (w/2*scale), y + drawH); // Bas
-            ctx.lineTo(x, y + drawH); // Retour gauche
-            ctx.closePath();
-            ctx.stroke();
+            // --- DESSIN MARGE DE COUTURE (Ligne extérieure) ---
+            ctx2d.strokeStyle = "rgba(74, 144, 226, 0.5)"; // Bleu clair
+            ctx2d.lineWidth = 1;
+            ctx2d.setLineDash([5, 3]); // Pointillés
+            ctx2d.beginPath();
+            ctx2d.moveTo(x, y); // Coin Haut Gauche ext
+            ctx2d.lineTo(x + drawW, y); // Haut ext
+            ctx2d.lineTo(x + drawW, y + (h+seam)*scale); // Côté int ext
+            ctx2d.lineTo(x + drawW + (w/2)*scale, y + (h+seam)*scale); // Fond ext
+            ctx2d.lineTo(x + drawW + (w/2)*scale, y + drawH); // Bas ext
+            ctx2d.lineTo(x, y + drawH); // Retour gauche ext
+            ctx2d.closePath();
+            ctx2d.stroke();
+            ctx2d.setLineDash([]); // Reset
+
+            // --- DESSIN LIGNE DE COUPE (Ligne intérieure) ---
+            ctx2d.strokeStyle = "#333";
+            ctx2d.lineWidth = 2;
+            ctx2d.beginPath();
+            const xi = x + sScale;
+            const yi = y + sScale;
+            const dWi = (lTop/2)*scale;
+            const dHi = (h + w/2)*scale;
+
+            ctx2d.moveTo(xi, yi);
+            ctx2d.lineTo(xi + dWi, yi);
+            ctx2d.lineTo(xi + dWi, yi + h*scale);
+            ctx2d.lineTo(xi + dWi + (w/2)*scale, yi + h*scale);
+            ctx2d.lineTo(xi + dWi + (w/2)*scale, yi + dHi);
+            ctx2d.lineTo(xi, yi + dHi);
+            ctx2d.closePath();
+            ctx2d.stroke();
 
             // Remplissage léger
-            ctx.fillStyle = "#f0f0f0";
-            ctx.fill();
+            ctx2d.fillStyle = "rgba(0,0,0,0.05)";
+            ctx2d.fill();
 
-            // Annotations (Dimensions)
-            ctx.fillStyle = "#000";
-            ctx.font = "12px Inter";
+            // --- REPRESENTATION ZIP (Bande hachurée sur le haut) ---
+            const zScale = zW * scale;
+            // On dessine la moitié de la largeur du zip de part et d'autre de la ligne de haut
+            ctx2d.fillStyle = "rgba(100, 100, 100, 0.2)"; // Gris hachuré simulé
+            // Bande sur le dessus (moitié)
+            ctx2d.fillRect(xi, yi - zScale/2, dWi, zScale/2);
+            // Bande sur le côté (descente)
+            const reachH = h * (reach/100) * scale;
+            if(reachH > 0) {
+                ctx2d.fillRect(xi - zScale/2, yi, zScale/2, reachH);
+            }
+
+            // --- ANNOTATIONS ---
+            ctx2d.fillStyle = "#000";
+            ctx2d.font = "12px Inter";
+            ctx2d.textAlign = "center";
             
-            // Cote Haut
-            ctx.fillText(`${(lTop/2 + seam).toFixed(1)} cm`, x + drawL/2, y - 10);
-            
-            // Cote Hauteur
-            ctx.fillText(`${(h + seam).toFixed(1)} cm`, x - 35, y + (h*scale)/2);
-            
+            // Cote Haut (Total avec marge)
+            ctx2d.fillText(`${(lTop/2 + seam).toFixed(1)}`, xi + dWi/2, y - 10);
+            // Cote Hauteur Totale
+            ctx2d.textAlign = "right";
+            ctx2d.fillText(`${(h + w/2 + seam).toFixed(1)}`, x - 10, yi + dHi/2);
             // Cote Fond
-            ctx.fillText(`${(w/2 + seam).toFixed(1)}`, x + drawL + 5, y + drawH + 15);
+            ctx2d.textAlign = "center";
+            ctx2d.fillText(`${(w/2 + seam).toFixed(1)}`, xi + dWi + (w/2*scale)/2, y + drawH + 15);
+            // Cote Marge
+            if(seam > 0) {
+                ctx2d.fillStyle = "rgba(74, 144, 226, 1)";
+                ctx2d.fillText(`Marge: ${seam}cm`, x + drawW/2, y + drawH + 35);
+            }
 
-            // Points de repère zip
-            ctx.fillStyle = "blue";
-            ctx.beginPath();
-            ctx.arc(x + drawL, y + (h*scale * (reach/100)), 3, 0, 2*Math.PI);
-            ctx.fill();
-            ctx.fillText("Zip Stop", x + drawL + 5, y + (h*scale * (reach/100)));
+            // Point Zip Stop
+            if(reach > 0 && reach < 100) {
+                 ctx2d.fillStyle = "blue";
+                 ctx2d.beginPath();
+                 ctx2d.arc(xi, yi + reachH, 3, 0, 2*Math.PI);
+                 ctx2d.fill();
+                 ctx2d.textAlign = "left";
+                 ctx2d.fillText("Arrêt Zip", xi + 5, yi + reachH + 4);
+            }
         }
 
         function downloadPattern() {
