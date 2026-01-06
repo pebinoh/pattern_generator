@@ -2,8 +2,6 @@
 
 Ce projet est un outil web interactif conçu pour les passionnés de **MYOG (Make Your Own Gear)**. Il permet de générer des patrons sur-mesure pour réaliser des **portefeuilles techniques**, pochettes ou trousses zippées ultra-légères (UL).
 
-🔗 **[Voir la démo en ligne](https://ton-pseudo.github.io/generateur-pattern/)** *(Remplace ce lien une fois ta page active dans les réglages GitHub)*
-
 ## ✨ Fonctionnalités
 
 * **Visualisation 3D Temps Réel** : Aperçu du volume final en fil de fer (wireframe) avec Three.js.
