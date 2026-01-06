@@ -3,218 +3,231 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zipworks Clone - Pattern Generator</title>
+    <title>Générateur de Patron</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            margin: 0;
-            display: flex;
-            height: 100vh;
-            color: #333;
-        }
+        :root { --accent: #2563eb; --bg: #f8fafc; --panel: #ffffff; }
+        body { font-family: 'Inter', system-ui, sans-serif; margin: 0; display: flex; height: 100vh; background: var(--bg); color: #1e293b; }
 
-        /* --- Sidebar Gauche --- */
-        .info-panel {
-            width: 300px;
-            padding: 40px;
-            border-right: 1px solid #eee;
-            overflow-y: auto;
-        }
+        /* Sidebar Gauche */
+        .info-panel { width: 280px; padding: 30px; border-right: 1px solid #e2e8f0; background: var(--panel); overflow-y: auto; }
+        h1 { font-size: 2rem; margin: 0; letter-spacing: -1px; color: #000; }
+        .description { font-size: 0.9rem; line-height: 1.5; color: #64748b; margin-top: 20px; }
 
-        h1 { font-size: 2.5rem; margin-top: 0; font-weight: 800; letter-spacing: -1px; }
-        .badge { background: #f0f0f0; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; }
+        /* Zone Centrale 3D */
+        .preview-container { flex-grow: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #canvas-3d { width: 100%; height: 100%; outline: none; cursor: move; }
+        .labels { position: absolute; top: 20px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; }
+        
+        .overlay-ui { position: absolute; bottom: 30px; display: flex; flex-direction: column; align-items: center; gap: 15px; }
+        .volume-tag { background: rgba(255,255,255,0.8); padding: 5px 15px; border-radius: 20px; font-weight: bold; backdrop-filter: blur(4px); border: 1px solid #e2e8f0; }
+        .btn-main { background: #000; color: #fff; border: none; padding: 12px 30px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: transform 0.2s; }
+        .btn-main:hover { transform: translateY(-2px); background: #222; }
 
-        /* --- Zone Centrale (3D) --- */
-        .preview-container {
-            flex-grow: 1;
-            position: relative;
-            background-color: #ffffff;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        #canvas-3d { width: 100%; height: 100%; outline: none; }
-        .preview-label { position: absolute; top: 20px; font-weight: bold; color: #888; }
-        .volume-display { position: absolute; bottom: 100px; color: #555; }
-        .btn-generate {
-            position: absolute;
-            bottom: 40px;
-            background: #e0e0e0;
-            border: none;
-            padding: 15px 40px;
-            border-radius: 5px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        /* --- Sidebar Droite (Contrôles) --- */
-        .controls-panel {
-            width: 320px;
-            padding: 30px;
-            background: #fff;
-            border-left: 1px solid #eee;
-            overflow-y: auto;
-        }
-
-        .control-group { margin-bottom: 20px; }
-        label { display: block; font-size: 0.9rem; font-weight: bold; margin-bottom: 5px; }
-        input, select {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
+        /* Sidebar Droite */
+        .controls-panel { width: 320px; padding: 25px; background: var(--panel); border-left: 1px solid #e2e8f0; overflow-y: auto; }
+        .control-group { margin-bottom: 18px; }
+        label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: #475569; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; transition: border 0.2s; }
+        input:focus { border-color: var(--accent); outline: none; }
         .row { display: flex; gap: 10px; }
-        .unit-toggle { display: flex; margin-bottom: 20px; }
-        .unit-toggle button {
-            flex: 1; padding: 8px; border: 1px solid #ccc; background: white; cursor: pointer;
-        }
-        .unit-toggle button.active { background: #eee; font-weight: bold; }
+        .help-icon { cursor: help; color: #94a3b8; margin-left: 4px; }
+        
+        hr { border: 0; border-top: 1px solid #f1f5f9; margin: 20px 0; }
     </style>
 </head>
 <body>
 
     <div class="info-panel">
         <h1>zipworks</h1>
-        <h3>Pattern Generator</h3>
-        <p>Outil pour créer un patron de couture pour une pochette avec fermeture éclair.</p>
+        <p><strong>Générateur de Patron</strong></p>
+        <div class="description">
+            Cet outil génère un patron de couture pour une pochette rectangulaire avec fermeture éclair sur le dessus.
+            <br><br>
+            Ajustez les dimensions à droite, la vue 3D se met à jour instantanément.
+        </div>
         <hr>
-        <p><small><strong>Disclaimer:</strong> Logiciel en beta. Vérifiez vos calculs.</small></p>
+        <p style="font-size: 0.75rem; color: #94a3b8;">Logiciel en version beta. Mesurez toujours votre tissu avant de couper.</p>
     </div>
 
     <div class="preview-container">
-        <div class="preview-label">360° Preview</div>
+        <div class="labels">Prévisualisation 360°</div>
         <canvas id="canvas-3d"></canvas>
-        <div class="volume-display" id="volume-text">Volume: 0.2L</div>
-        <button class="btn-generate">Generate pattern!</button>
+        <div class="overlay-ui">
+            <div class="volume-tag" id="volume-text">Volume : 0.00 L</div>
+            <button class="btn-main" onclick="downloadPattern()">Générer le patron (SVG)</button>
+        </div>
     </div>
 
     <div class="controls-panel">
-        <div class="unit-toggle">
-            <button class="active">in</button>
-            <button>cm</button>
+        <div class="control-group">
+            <label>Unité : <strong>Centimètres (cm)</strong></label>
         </div>
 
         <div class="control-group">
-            <label>Construction ⓘ</label>
+            <label>Construction</label>
             <select id="construction">
-                <option>1 Panel</option>
-                <option>2 Panels</option>
+                <option value="1panel">1 Panneau (enveloppant)</option>
+                <option value="2panels">2 Panneaux (séparés)</option>
             </select>
         </div>
 
         <div class="control-group">
-            <label>Length (Top / Bottom)</label>
+            <label>Longueur (Haut / Bas)</label>
             <div class="row">
-                <input type="number" id="lenTop" value="4" step="0.1">
-                <input type="number" id="lenBot" value="4" step="0.1">
+                <input type="number" id="lenTop" value="20" step="0.5">
+                <input type="number" id="lenBot" value="20" step="0.5">
             </div>
         </div>
 
         <div class="control-group">
-            <label>Width</label>
-            <input type="number" id="width" value="1" step="0.1">
+            <label>Largeur (Épaisseur)</label>
+            <input type="number" id="width" value="6" step="0.5">
         </div>
 
         <div class="control-group">
-            <label>Height</label>
-            <input type="number" id="height" value="2.75" step="0.1">
+            <label>Hauteur</label>
+            <input type="number" id="height" value="12" step="0.5">
+        </div>
+
+        <hr>
+
+        <div class="control-group">
+            <label>Valeur de couture (cm)</label>
+            <input type="number" id="seam" value="1" step="0.1">
         </div>
 
         <div class="control-group">
-            <label>Seam allowance ⓘ</label>
-            <input type="number" id="seam" value="0.25" step="0.05">
+            <label>Largeur fermeture éclair (cm)</label>
+            <input type="number" id="zipWidth" value="2.5" step="0.1">
         </div>
 
         <div class="control-group">
-            <label>Zipper width ⓘ</label>
-            <input type="number" id="zipWidth" value="1" step="0.1">
-        </div>
-
-        <div class="control-group">
-            <label>Zipper reach ⓘ</label>
-            <input type="range" id="zipReach" min="0" max="100" value="70">
+            <label>Ouverture fermeture (%)</label>
+            <input type="range" id="zipReach" min="10" max="100" value="90">
         </div>
     </div>
 
     <script>
-        // --- INITIALISATION THREE.JS ---
+        // --- CONFIGURATION THREE.JS ---
         const canvas = document.querySelector('#canvas-3d');
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xffffff);
+        scene.background = new THREE.Color(0xf8fafc);
 
         const camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
-        camera.position.set(5, 5, 5);
+        camera.position.set(30, 20, 30);
 
         const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
 
         // Lumières
-        const light = new THREE.DirectionalLight(0xffffff, 1);
-        light.position.set(5, 10, 7.5);
-        scene.add(light);
-        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
 
-        // Création du Mesh (Pochette)
-        let geometry = new THREE.BoxGeometry(1, 1, 1);
-        const material = new THREE.MeshPhongMaterial({ 
-            color: 0xffffff, 
-            wireframe: false,
-            transparent: true,
-            opacity: 0.5
-        });
-        const pouch = new THREE.Mesh(geometry, material);
-        scene.add(pouch);
+        // Objets 3D
+        let pouchGroup = new THREE.Group();
+        scene.add(pouchGroup);
 
-        // Bordures (Edges)
-        const edges = new THREE.EdgesGeometry(geometry);
-        const lineMat = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
-        const wireframe = new THREE.LineSegments(edges, lineMat);
-        scene.add(wireframe);
+        function createPouch() {
+            // Nettoyer l'ancien groupe
+            while(pouchGroup.children.length > 0){ 
+                pouchGroup.remove(pouchGroup.children[0]); 
+            }
 
-        // --- MISE À JOUR EN TEMPS RÉEL ---
-        function updateGeometry() {
             const L = parseFloat(document.getElementById('lenTop').value) || 1;
             const W = parseFloat(document.getElementById('width').value) || 1;
             const H = parseFloat(document.getElementById('height').value) || 1;
+            const zWidth = parseFloat(document.getElementById('zipWidth').value) || 1;
+            const zReach = parseFloat(document.getElementById('zipReach').value) / 100;
 
-            // Mise à jour de l'échelle du mesh
-            pouch.scale.set(L, H, W);
-            wireframe.scale.set(L, H, W);
+            // Matière Pochette
+            const material = new THREE.MeshPhongMaterial({ color: 0xffffff, transparent: true, opacity: 0.7, side: THREE.DoubleSide });
+            const lineMat = new THREE.LineBasicMaterial({ color: 0x000000 });
 
-            // Calcul du volume simple (L*W*H) - Conversion arbitraire pour l'exemple
-            const volume = (L * W * H * 0.016387).toFixed(2); // cubic inches to Liters approx
-            document.getElementById('volume-text').innerText = `Volume: ${volume}L`;
+            // Corps de la pochette
+            const geom = new THREE.BoxGeometry(L, H, W);
+            const mesh = new THREE.Mesh(geom, material);
+            const edges = new THREE.EdgesGeometry(geom);
+            const wireframe = new THREE.LineSegments(edges, lineMat);
+            
+            pouchGroup.add(mesh);
+            pouchGroup.add(wireframe);
+
+            // Visualisation Fermeture Éclair (Sur le dessus)
+            const zipGeom = new THREE.PlaneGeometry(L * zReach, zWidth);
+            const zipMat = new THREE.MeshBasicMaterial({ color: 0x333333, side: THREE.DoubleSide });
+            const zipper = new THREE.Mesh(zipGeom, zipMat);
+            zipper.rotation.x = Math.PI / 2;
+            zipper.position.y = H / 2 + 0.01; // Juste au dessus
+            pouchGroup.add(zipper);
+
+            // Petite ligne centrale pour simuler les dents de la fermeture
+            const zipLineGeom = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(-L*zReach/2, H/2 + 0.02, 0),
+                new THREE.Vector3(L*zReach/2, H/2 + 0.02, 0)
+            ]);
+            const zipLine = new THREE.Line(zipLineGeom, new THREE.LineBasicMaterial({color: 0xaaaaaa}));
+            pouchGroup.add(zipLine);
+
+            // Volume en Litres (cm3 / 1000)
+            const volume = ((L * W * H) / 1000).toFixed(2);
+            document.getElementById('volume-text').innerText = `Volume : ${volume} L`;
         }
 
-        // Écouteurs d'événements sur les inputs
-        const inputs = document.querySelectorAll('input, select');
-        inputs.forEach(input => {
-            input.addEventListener('input', updateGeometry);
-        });
+        // --- GÉNÉRATION DU PATRON SVG ---
+        function downloadPattern() {
+            const L = parseFloat(document.getElementById('lenTop').value);
+            const W = parseFloat(document.getElementById('width').value);
+            const H = parseFloat(document.getElementById('height').value);
+            const S = parseFloat(document.getElementById('seam').value);
 
-        // --- BOUCLE D'ANIMATION ---
+            // Calcul simplifié pour un patron "Boite" (1 seul panneau déplié)
+            // Largeur totale = Longueur + 2x Couture
+            // Hauteur totale = (Hauteur x 2) + Largeur + 2x Couture
+            const totalWidth = L + (2 * S);
+            const totalHeight = (H * 2) + W + (2 * S);
+
+            const svgContent = `
+            <svg width="${totalWidth}cm" height="${totalHeight}cm" viewBox="0 0 ${totalWidth} ${totalHeight}" xmlns="http://www.w3.org/2000/svg">
+                <rect x="0" y="0" width="${totalWidth}" height="${totalHeight}" fill="none" stroke="black" stroke-width="0.1" />
+                <text x="1" y="2" font-size="1">Patron Pochette - ${L}x${H}x${W} cm</text>
+                <text x="1" y="4" font-size="0.8">Valeur couture: ${S} cm incluse</text>
+                <line x1="0" y1="${S + H}" x2="${totalWidth}" y2="${S + H}" stroke="blue" stroke-dasharray="0.5" stroke-width="0.05" />
+                <line x1="0" y1="${S + H + W}" x2="${totalWidth}" y2="${S + H + W}" stroke="blue" stroke-dasharray="0.5" stroke-width="0.05" />
+            </svg>`;
+
+            const blob = new Blob([svgContent], {type: 'image/svg+xml'});
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `patron_pochette_${L}x${H}.svg`;
+            link.click();
+        }
+
+        // --- EVENTS ---
+        const inputs = document.querySelectorAll('input, select');
+        inputs.forEach(input => input.addEventListener('input', createPouch));
+
         function animate() {
             requestAnimationFrame(animate);
             controls.update();
             
-            // Ajustement taille canvas si redimensionnement fenêtre
-            const width = canvas.clientWidth;
-            const height = canvas.clientHeight;
-            if (canvas.width !== width || canvas.height !== height) {
-                renderer.setSize(width, height, false);
-                camera.aspect = width / height;
+            const w = canvas.clientWidth;
+            const h = canvas.clientHeight;
+            if (canvas.width !== w || canvas.height !== h) {
+                renderer.setSize(w, h, false);
+                camera.aspect = w / h;
                 camera.updateProjectionMatrix();
             }
-            
             renderer.render(scene, camera);
         }
 
-        updateGeometry();
+        createPouch();
         animate();
     </script>
 </body>
