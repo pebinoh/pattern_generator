@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zipworks - Générateur de Patron</title>
+    <title>Générateur de Patron</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <style>
@@ -43,7 +43,7 @@
 <body>
 
     <div class="sidebar">
-        <h1>zipworks</h1>
+        <h1>Générateur de pattern</h1>
         <p class="desc">Générez un patron de couture personnalisé pour vos pochettes.</p>
         <div class="control-group">
             <label>Comment ça marche ?</label>
@@ -241,7 +241,7 @@
             const dataURL = previewCanvas.toDataURL("image/png");
             const dl = document.getElementById('download-link');
             dl.href = dataURL;
-            dl.download = `patron_zipworks_${L}x${H}.png`;
+            dl.download = `patron_${L}x${H}.png`;
 
             modal.style.display = "flex";
         }
