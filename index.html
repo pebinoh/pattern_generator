@@ -14,7 +14,599 @@
             --accent: #4a90e2;
             --bg: #ffffff;
             --gray-light: #f5f5f5;
+            --border: #ddd;<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur de Pattern</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <style>
+        :root {
+            --primary: #333;
+            --accent: #4a90e2;
+            --bg: #ffffff;
+            --gray-light: #f5f5f5;
             --border: #ddd;
+            --seam-color: rgba(74, 144, 226, 0.5);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            color: var(--primary);
+            background: var(--bg);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- Layout --- */
+        .sidebar {
+            width: 35%;
+            padding: 40px;
+            overflow-y: auto;
+            border-right: 1px solid var(--border);
+            background: #fdfdfd;
+        }
+
+        .main-app {
+            width: 65%;
+            display: flex;
+            position: relative;
+        }
+
+        .viewer-3d {
+            flex: 1;
+            background: #fff;
+            position: relative;
+            cursor: grab;
+        }
+
+        .controls-panel {
+            width: 300px;
+            padding: 30px;
+            background: #fff;
+            border-left: 1px solid var(--border);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* --- Typography & Elements --- */
+        h1 { font-size: 2.5rem; letter-spacing: -1px; margin-bottom: 10px; }
+        h2 { font-size: 1.2rem; margin-top: 30px; margin-bottom: 10px; }
+        p { line-height: 1.6; color: #555; font-size: 0.95rem; }
+        strong { color: #000; }
+        a { color: var(--primary); text-decoration: underline; cursor: pointer; }
+
+        /* --- Form Elements --- */
+        .control-group { margin-bottom: 15px; }
+        .control-group label {
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .input-row { display: flex; gap: 10px; }
+        .input-wrapper { flex: 1; }
+        
+        input[type="number"], select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        input[type="range"] { width: 100%; cursor: pointer; }
+
+        /* --- Tooltip --- */
+        .info-icon {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: 16px;
+            height: 16px;
+            background: #eee;
+            color: #666;
+            border-radius: 50%;
+            font-size: 10px;
+            margin-left: 8px;
+            cursor: help;
+            position: relative;
+            font-style: normal;
+            font-weight: bold;
+        }
+
+        .info-icon:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            z-index: 100;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* --- Button --- */
+        .btn-generate {
+            background: linear-gradient(to bottom, #fff, #f9f9f9);
+            border: 1px solid var(--border);
+            padding: 15px;
+            width: 100%;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+            margin-top: auto;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .btn-generate:hover { background: #f0f0f0; border-color: #ccc; }
+
+        /* --- MODAL --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none; justify-content: center; align-items: center;
+            z-index: 1000;
+        }
+        .modal {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            width: 500px;
+            max-width: 90%;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        .modal h2 { margin-top: 0; }
+        .close-modal {
+            position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #999;
+        }
+        canvas {
+            border: 1px dashed #ddd;
+            margin: 20px 0;
+            max-width: 100%;
+        }
+        .btn-download {
+            background: #333; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-size: 1rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn-download:hover { background: #555; }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            body { flex-direction: column; overflow: auto; height: auto; }
+            .sidebar, .main-app { width: 100%; }
+            .main-app { flex-direction: column-reverse; height: 800px; }
+            .controls-panel { width: 100%; border-left: none; border-top: 1px solid var(--border); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h1>Générateur de pattern</h1>
+        <p>
+            Cet outil vous permet de créer un patron de couture simple pour une pochette/sac avec fermeture éclair sur le dessus.
+            Personnalisez-le en ajoutant des onglets, poches, poignées ou étiquettes pour en faire votre propre création.
+        </p>
+        <h2>Comment ça marche ?</h2>
+        <p>
+            Configurer un projet avec ce générateur est simple et rapide. Visualisez le rendu en 3D à droite et ajustez les dimensions.
+        </p>
+        <p>
+            L'aperçu en fil de fer (wireframe) vous montre la structure exacte. La bande hachurée représente la fermeture éclair, et les lignes bleues indiquent la marge de couture.
+        </p>
+        <h2>C'est gratuit ?</h2>
+        <p>
+            C'est un projet passion. Si vous voulez soutenir le développement, partagez cet outil !
+        </p>
+        <h2>Avertissement</h2>
+        <p style="font-size: 0.85rem; color: #777;">
+            Ce logiciel est en version bêta, vérifiez toujours vos calculs avant de couper le tissu. Signalez les bugs si vous en trouvez.
+        </p>
+    </div>
+
+    <div class="main-app">
+        <div class="viewer-3d" id="scene-container">
+            <div style="position: absolute; top: 20px; width: 100%; text-align: center; color: #999; pointer-events: none;">
+                360° Aperçu <br> ↻
+            </div>
+            <div style="position: absolute; bottom: 20px; width: 100%; text-align: center; font-family: monospace;" id="volume-display">
+                Volume: 0.0L
+            </div>
+        </div>
+
+        <div class="controls-panel">
+            
+            <div class="control-group" style="display: flex; align-items: center; gap: 10px;">
+                <label style="margin-bottom: 0;">Unité :</label>
+                <span style="font-weight: 600; background: #eee; padding: 5px 10px; border-radius: 4px;">cm</span>
+            </div>
+
+            <div class="control-group">
+                <label>Construction <i class="info-icon" data-tooltip="Type de structure (1 pièce pliée ou 2 panneaux cousus)">i</i></label>
+                <select id="construction">
+                    <option value="1">1 Panneau (Pli au fond)</option>
+                    <option value="2">2 Panneaux (Couture au fond)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Longueur</label>
+                <div class="input-row">
+                    <div class="input-wrapper">
+                        <span style="font-size:0.8rem; color:#888;">Haut</span>
+                        <input type="number" id="lenTop" value="20" step="0.5" min="1">
+                    </div>
+                    <div class="input-wrapper">
+                        <span style="font-size:0.8rem; color:#888;">Bas</span>
+                        <input type="number" id="lenBot" value="20" step="0.5" min="1">
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Largeur (Profondeur) <i class="info-icon" data-tooltip="Épaisseur de la pochette">i</i></label>
+                <input type="number" id="width" value="8" step="0.5" min="1">
+            </div>
+
+            <div class="control-group">
+                <label>Hauteur <i class="info-icon" data-tooltip="Hauteur verticale finale">i</i></label>
+                <input type="number" id="height" value="12" step="0.5" min="1">
+            </div>
+
+            <div class="control-group">
+                <label>Marge de couture <i class="info-icon" data-tooltip="Espace ajouté pour la couture (visualisé en bleu)">i</i></label>
+                <input type="number" id="seam" value="1" step="0.1" min="0">
+            </div>
+
+            <div class="control-group">
+                <label>Largeur Zip <i class="info-icon" data-tooltip="Largeur totale de la bande zip (visualisée en hachuré)">i</i></label>
+                <input type="number" id="zipWidth" value="3" step="0.1" min="0.5">
+            </div>
+
+            <div class="control-group">
+                <label>Longueur Zip Haut <i class="info-icon" data-tooltip="Pourcentage de la largeur du haut couverte par le zip">i</i></label>
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #888; margin-bottom: 5px;">
+                    <span>0% (Centre)</span><span>100% (Tout)</span>
+                </div>
+                <input type="range" id="zipLengthTop" min="0" max="100" value="100">
+            </div>
+
+            <div class="control-group">
+                <label>Descente Zip <i class="info-icon" data-tooltip="Jusqu'où descend la fermeture sur les côtés">i</i></label>
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #888; margin-bottom: 5px;">
+                    <span>0% (Haut)</span><span>100% (Bas)</span>
+                </div>
+                <input type="range" id="zipReach" min="0" max="100" value="50">
+            </div>
+
+            <button class="btn-generate" onclick="openModal()">Générer le patron !</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h2>Patron généré avec succès !</h2>
+            
+            <canvas id="patternCanvas" width="500" height="400"></canvas>
+            
+            <button class="btn-download" onclick="downloadPattern()">
+                <span>⬇ Télécharger le patron (PNG)</span>
+            </button>
+            
+            <p style="font-size: 0.8rem; color: #888; margin-top: 15px;">
+                Vérifiez toujours les cotes sur le tissu avant de couper. Le dessin inclut la marge de couture.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // --- THREE.JS SETUP ---
+        const container = document.getElementById('scene-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xffffff);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(30, 30, 40);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.8;
+
+        const bagGroup = new THREE.Group();
+        scene.add(bagGroup);
+
+        function getInputs() {
+            return {
+                lTop: Math.max(0.1, parseFloat(document.getElementById('lenTop').value) || 0),
+                lBot: Math.max(0.1, parseFloat(document.getElementById('lenBot').value) || 0),
+                w: Math.max(0.1, parseFloat(document.getElementById('width').value) || 0),
+                h: Math.max(0.1, parseFloat(document.getElementById('height').value) || 0),
+                seam: Math.max(0, parseFloat(document.getElementById('seam').value) || 0),
+                zW: Math.max(0.1, parseFloat(document.getElementById('zipWidth').value) || 0),
+                reach: parseInt(document.getElementById('zipReach').value) || 0,
+                // Nouvel input pour la longueur du zip sur le dessus
+                zLenT: parseInt(document.getElementById('zipLengthTop').value) || 0,
+                construction: document.getElementById('construction').value
+            };
+        }
+
+        function createLine(p1, p2, color, dashed = false, opacity = 1) {
+            const points = [p1, p2];
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            let material;
+            if (dashed) {
+                material = new THREE.LineDashedMaterial({ color: color, linewidth: 1, scale: 1, dashSize: 1, gapSize: 0.5, opacity: opacity, transparent: true });
+            } else {
+                material = new THREE.LineBasicMaterial({ color: color, linewidth: 1, opacity: opacity, transparent: true });
+            }
+            const line = new THREE.Line(geometry, material);
+            if (dashed) line.computeLineDistances();
+            return line;
+        }
+
+        // --- FONCTION DE DESSIN 3D ---
+        function updateGeometry() {
+            while(bagGroup.children.length > 0){ 
+                let obj = bagGroup.children[0];
+                if(obj.geometry) obj.geometry.dispose();
+                if(obj.material) {
+                    if(Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+                    else obj.material.dispose();
+                }
+                bagGroup.remove(obj); 
+            }
+
+            // Récupération des inputs incluant zLenT (pourcentage longueur top)
+            const { lTop, lBot, w, h, seam, zW, reach, zLenT, construction } = getInputs();
+            const wHalf = w / 2;
+            const hHalf = h / 2;
+            const rRatio = reach / 100;
+            const zLenRatio = zLenT / 100; // Ratio de longueur sur le dessus
+
+            // Sommets principaux
+            const v = {
+                tfl: new THREE.Vector3(-lTop/2, hHalf, wHalf), tfr: new THREE.Vector3(lTop/2, hHalf, wHalf),
+                tbl: new THREE.Vector3(-lTop/2, hHalf, -wHalf), tbr: new THREE.Vector3(lTop/2, hHalf, -wHalf),
+                bfl: new THREE.Vector3(-lBot/2, -hHalf, wHalf), bfr: new THREE.Vector3(lBot/2, -hHalf, wHalf),
+                bbl: new THREE.Vector3(-lBot/2, -hHalf, -wHalf), bbr: new THREE.Vector3(lBot/2, -hHalf, -wHalf)
+            };
+
+            // --- WIREFRAME PRINCIPAL ---
+            const mainColor = 0x333333;
+            bagGroup.add(createLine(v.tfl, v.tfr, mainColor)); bagGroup.add(createLine(v.tfr, v.tbr, mainColor));
+            bagGroup.add(createLine(v.tbr, v.tbl, mainColor)); bagGroup.add(createLine(v.tbl, v.tfl, mainColor));
+            const bottomDashed = construction === "2";
+            bagGroup.add(createLine(v.bfl, v.bfr, mainColor, bottomDashed)); bagGroup.add(createLine(v.bfr, v.bbr, mainColor, bottomDashed));
+            bagGroup.add(createLine(v.bbr, v.bbl, mainColor, bottomDashed)); bagGroup.add(createLine(v.bbl, v.bfl, mainColor, bottomDashed));
+            bagGroup.add(createLine(v.tfl, v.bfl, mainColor)); bagGroup.add(createLine(v.tfr, v.bfr, mainColor));
+            bagGroup.add(createLine(v.tbr, v.bbr, mainColor)); bagGroup.add(createLine(v.tbl, v.bbl, mainColor));
+
+            // --- MARGE DE COUTURE ---
+            if (seam > 0) {
+                const seamColor = 0x4a90e2; const seamOpacity = 0.5;
+                const vs = {
+                    tfl: new THREE.Vector3(-lTop/2 - seam, hHalf + seam, wHalf + seam), tfr: new THREE.Vector3(lTop/2 + seam, hHalf + seam, wHalf + seam),
+                    tbl: new THREE.Vector3(-lTop/2 - seam, hHalf + seam, -wHalf - seam), tbr: new THREE.Vector3(lTop/2 + seam, hHalf + seam, -wHalf - seam),
+                    bfl: new THREE.Vector3(-lBot/2 - seam, -hHalf - seam, wHalf + seam), bfr: new THREE.Vector3(lBot/2 + seam, -hHalf - seam, wHalf + seam),
+                    bbl: new THREE.Vector3(-lBot/2 - seam, -hHalf - seam, -wHalf - seam), bbr: new THREE.Vector3(lBot/2 + seam, -hHalf - seam, -wHalf - seam)
+                };
+                bagGroup.add(createLine(vs.tfl, vs.tfr, seamColor, false, seamOpacity)); bagGroup.add(createLine(vs.tfr, vs.tbr, seamColor, false, seamOpacity));
+                bagGroup.add(createLine(vs.tbr, vs.tbl, seamColor, false, seamOpacity)); bagGroup.add(createLine(vs.tbl, vs.tfl, seamColor, false, seamOpacity));
+                bagGroup.add(createLine(vs.bfl, vs.bfr, seamColor, false, seamOpacity)); bagGroup.add(createLine(vs.bfr, vs.bbr, seamColor, false, seamOpacity));
+                bagGroup.add(createLine(vs.bbr, vs.bbl, seamColor, false, seamOpacity)); bagGroup.add(createLine(vs.bbl, vs.bfl, seamColor, false, seamOpacity));
+                bagGroup.add(createLine(vs.tfl, vs.bfl, seamColor, false, seamOpacity)); bagGroup.add(createLine(vs.tfr, vs.bfr, seamColor, false, seamOpacity));
+                bagGroup.add(createLine(vs.tbr, vs.bbr, seamColor, false, seamOpacity)); bagGroup.add(createLine(vs.tbl, vs.bbl, seamColor, false, seamOpacity));
+            }
+
+            // --- ZIPPER VISUALIZATION (Modifié pour la longueur variable) ---
+            const zHalf = zW / 2;
+            
+            // Calcul des points de départ et fin du zip sur le dessus selon le ratio zLenT
+            // Si zLenT = 100%, va de -lTop/2 à +lTop/2. Si 0%, reste à 0.
+            const topZipEndX = (lTop / 2) * zLenRatio;
+            const topZipStartX = -topZipEndX;
+
+            const pointsPath = [];
+            // Point bas gauche ajusté en X
+            if (rRatio > 0) pointsPath.push(new THREE.Vector3(topZipStartX, v.tfl.y - h*rRatio, 0));
+            // Point haut gauche ajusté en X
+            pointsPath.push(new THREE.Vector3(topZipStartX, hHalf, 0));
+            // Point haut droit ajusté en X
+            pointsPath.push(new THREE.Vector3(topZipEndX, hHalf, 0));
+            // Point bas droit ajusté en X
+            if (rRatio > 0) pointsPath.push(new THREE.Vector3(topZipEndX, v.tfr.y - h*rRatio, 0));
+
+            const path = new THREE.CatmullRomCurve3(pointsPath, false, 'catmullrom', 0.1);
+            
+            // Géométrie ruban (Extrusion)
+            const shape = new THREE.Shape();
+            shape.moveTo(-zHalf, 0); shape.lineTo(zHalf, 0); shape.lineTo(zHalf, 0.1); shape.lineTo(-zHalf, 0.1); shape.closePath();
+            const extrudeSettings = { steps: 64, bevelEnabled: false, extrudePath: path };
+            const zipGeometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+
+            // Texture hachurée
+            const canvas = document.createElement('canvas');
+            canvas.width = 64; canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 64, 64);
+            ctx.strokeStyle = '#888'; ctx.lineWidth = 4;
+            for (let i = -64; i < 128; i += 16) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + 64, 64); ctx.stroke(); }
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(10, 1);
+            const zipMaterial = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
+            
+            // --- Simplification visuelle : Bandes plates ---
+            // Bande Dessus (Sa largeur est maintenant variable : topZipEndX - topZipStartX)
+            const currentTopZipLen = topZipEndX - topZipStartX;
+            if(currentTopZipLen > 0.1) {
+                 const topZipGeo = new THREE.PlaneGeometry(currentTopZipLen, zW);
+                 const topZipMesh = new THREE.Mesh(topZipGeo, zipMaterial);
+                 topZipMesh.rotation.x = -Math.PI / 2;
+                 topZipMesh.position.set(0, hHalf + 0.05, 0);
+                 bagGroup.add(topZipMesh);
+            }
+
+            // Bandes Côtés (si reach > 0) - Position X ajustée
+            if (rRatio > 0) {
+                const sideH = h * rRatio;
+                const sideZipGeo = new THREE.PlaneGeometry(zW, sideH);
+                
+                // Côté Gauche (Position X = topZipStartX)
+                const leftZip = new THREE.Mesh(sideZipGeo, zipMaterial);
+                leftZip.rotation.y = -Math.PI / 2;
+                // On décale légèrement vers l'intérieur si ce n'est pas au bord complet pour éviter le z-fighting avec le fil de fer
+                const offset = zLenRatio < 1 ? -0.05 : 0.05;
+                leftZip.position.set(topZipStartX - offset, hHalf - sideH/2, 0);
+                bagGroup.add(leftZip);
+
+                // Côté Droit (Position X = topZipEndX)
+                const rightZip = new THREE.Mesh(sideZipGeo, zipMaterial);
+                rightZip.rotation.y = Math.PI / 2;
+                rightZip.position.set(topZipEndX + offset, hHalf - sideH/2, 0);
+                bagGroup.add(rightZip);
+            }
+
+            // Affichage Volume
+            const areaTop = lTop * w;
+            const areaBot = lBot * w;
+            const volCm3 = ((areaTop + areaBot)/2) * h;
+            const volL = (volCm3 / 1000).toFixed(2);
+            document.getElementById('volume-display').innerText = `Volume: ${volL}L`;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+        updateGeometry();
+
+        document.querySelectorAll('input, select').forEach(el => {
+            el.addEventListener('input', updateGeometry);
+            el.addEventListener('change', updateGeometry);
+        });
+
+        window.addEventListener('resize', () => {
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            renderer.setSize(width, height);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+        });
+
+        // --- MODAL & 2D PATTERN (Mis à jour) ---
+        const modal = document.getElementById('modalOverlay');
+        const cvs = document.getElementById('patternCanvas');
+        const ctx2d = cvs.getContext('2d');
+
+        function openModal() { modal.style.display = 'flex'; drawPattern2D(); }
+        function closeModal() { modal.style.display = 'none'; }
+        window.onclick = function(event) { if (event.target == modal) closeModal(); }
+
+        function drawPattern2D() {
+            // Récupération incluant zLenT
+            const { lTop, h, w, seam, zW, reach, zLenT } = getInputs();
+            const zLenRatio = zLenT / 100;
+
+            ctx2d.clearRect(0, 0, cvs.width, cvs.height);
+            ctx2d.fillStyle = "#fff"; ctx2d.fillRect(0,0, cvs.width, cvs.height);
+            
+            const scale = 15; const padX = 60; const padY = 60;
+            const totalH = h + w/2 + seam*2; const totalW = lTop/2 + seam*2;
+            const drawH = totalH * scale; const drawW = totalW * scale; const sScale = seam * scale;
+            const x = padX; const y = padY;
+            
+            // Marge extérieure
+            ctx2d.strokeStyle = "rgba(74, 144, 226, 0.5)"; ctx2d.lineWidth = 1; ctx2d.setLineDash([5, 3]);
+            ctx2d.beginPath(); ctx2d.moveTo(x, y); ctx2d.lineTo(x + drawW, y); ctx2d.lineTo(x + drawW, y + (h+seam)*scale);
+            ctx2d.lineTo(x + drawW + (w/2)*scale, y + (h+seam)*scale); ctx2d.lineTo(x + drawW + (w/2)*scale, y + drawH);
+            ctx2d.lineTo(x, y + drawH); ctx2d.closePath(); ctx2d.stroke(); ctx2d.setLineDash([]);
+
+            // Ligne de coupe intérieure
+            ctx2d.strokeStyle = "#333"; ctx2d.lineWidth = 2; ctx2d.beginPath();
+            const xi = x + sScale; const yi = y + sScale;
+            const dWi = (lTop/2)*scale; const dHi = (h + w/2)*scale;
+            ctx2d.moveTo(xi, yi); ctx2d.lineTo(xi + dWi, yi); ctx2d.lineTo(xi + dWi, yi + h*scale);
+            ctx2d.lineTo(xi + dWi + (w/2)*scale, yi + h*scale); ctx2d.lineTo(xi + dWi + (w/2)*scale, yi + dHi);
+            ctx2d.lineTo(xi, yi + dHi); ctx2d.closePath(); ctx2d.stroke();
+            ctx2d.fillStyle = "rgba(0,0,0,0.05)"; ctx2d.fill();
+
+            // --- REPRESENTATION ZIP (Ajustée pour longueur variable) ---
+            const zScale = zW * scale;
+            ctx2d.fillStyle = "rgba(100, 100, 100, 0.2)";
+            
+            // Calcul de la longueur dessinée sur le dessus selon le ratio
+            const drawnZipTopLen = dWi * zLenRatio;
+
+            // Bande sur le dessus (partant du centre 'xi' vers la droite)
+            if(drawnZipTopLen > 0) {
+                ctx2d.fillRect(xi, yi - zScale/2, drawnZipTopLen, zScale/2);
+            }
+            
+            // Bande sur le côté (descente)
+            const reachH = h * (reach/100) * scale;
+            if(reachH > 0) {
+                // La descente commence là où s'arrête la bande du dessus : xi + drawnZipTopLen
+                // On décale de zScale/2 vers la gauche pour centrer la bande verticale sur ce point
+                ctx2d.fillRect(xi + drawnZipTopLen - zScale/2, yi, zScale/2, reachH);
+            }
+
+            // Annotations
+            ctx2d.fillStyle = "#000"; ctx2d.font = "12px Inter"; ctx2d.textAlign = "center";
+            ctx2d.fillText(`${(lTop/2 + seam).toFixed(1)}`, xi + dWi/2, y - 10);
+            ctx2d.textAlign = "right"; ctx2d.fillText(`${(h + w/2 + seam).toFixed(1)}`, x - 10, yi + dHi/2);
+            ctx2d.textAlign = "center"; ctx2d.fillText(`${(w/2 + seam).toFixed(1)}`, xi + dWi + (w/2*scale)/2, y + drawH + 15);
+            if(seam > 0) { ctx2d.fillStyle = "rgba(74, 144, 226, 1)"; ctx2d.fillText(`Marge: ${seam}cm`, x + drawW/2, y + drawH + 35); }
+
+            // Point Zip Stop (Ajusté en position X)
+            if(reach > 0 && reach < 100) {
+                 ctx2d.fillStyle = "blue";
+                 ctx2d.beginPath();
+                 // Position X du point : xi + drawnZipTopLen
+                 ctx2d.arc(xi + drawnZipTopLen, yi + reachH, 3, 0, 2*Math.PI);
+                 ctx2d.fill();
+                 ctx2d.textAlign = "left";
+                 ctx2d.fillText("Arrêt Zip", xi + drawnZipTopLen + 5, yi + reachH + 4);
+            }
+        }
+
+        function downloadPattern() {
+            const link = document.createElement('a');
+            link.download = 'patron-couture.png';
+            link.href = cvs.toDataURL();
+            link.click();
+        }
+    </script>
+</body>
+</html>
             --seam-color: rgba(74, 144, 226, 0.5); /* Couleur marge couture */
         }
 
