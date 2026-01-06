@@ -3,242 +3,228 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Générateur de Patron</title>
+    <title>Zipworks Clone - Qualité HD</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <style>
-        :root { --bg: #ffffff; --ui-bg: #f9fafb; --border: #e5e7eb; --accent: #000000; }
-        body { font-family: -apple-system, system-ui, sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; color: #111827; }
+        :root { --bg: #ffffff; --ui-bg: #ffffff; --border: #eeeeee; }
+        body { font-family: -apple-system, system-ui, sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; background: #fff; }
 
-        /* --- Sidebars --- */
-        .sidebar { width: 320px; padding: 25px; border-right: 1px solid var(--border); overflow-y: auto; background: white; z-index: 10; }
-        .sidebar-right { border-right: none; border-left: 1px solid var(--border); }
-        h1 { font-size: 1.8rem; margin: 0 0 10px 0; font-weight: 800; }
-        
-        .control-group { margin-bottom: 18px; position: relative; }
-        label { display: flex; align-items: center; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: #374151; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box; }
-        .row { display: flex; gap: 8px; }
+        /* --- Sidebar Gauche --- */
+        .sidebar { width: 300px; padding: 40px; border-right: 1px solid var(--border); overflow-y: auto; }
+        h1 { font-size: 2.5rem; margin: 0; font-weight: 800; letter-spacing: -1.5px; }
+        .desc { font-size: 0.95rem; line-height: 1.5; color: #333; margin-top: 20px; }
 
-        /* --- Tooltips --- */
-        .info-icon {
-            display: inline-flex; align-items: center; justify-content: center;
-            width: 16px; height: 16px; margin-left: 6px; background: #e5e7eb;
-            color: #6b7280; border-radius: 50%; font-size: 11px; cursor: help; position: relative;
-        }
-        .info-icon:hover::after {
-            content: attr(data-tooltip); position: absolute; bottom: 125%; left: 50%; transform: translateX(-50%);
-            background: #1f2937; color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.75rem;
-            width: 200px; z-index: 100; font-weight: normal; line-height: 1.3;
-        }
+        /* --- Zone Centrale (Le Rendu 3D) --- */
+        .preview-container { flex-grow: 1; position: relative; background: #fff; display: flex; flex-direction: column; }
+        #canvas-3d { width: 100%; height: 100%; outline: none; }
+        .preview-label { position: absolute; top: 20px; width: 100%; text-align: center; font-style: italic; color: #888; font-size: 0.9rem; }
+        .rotation-icon { position: absolute; top: 45px; left: 50%; transform: translateX(-50%); width: 30px; opacity: 0.6; }
 
-        /* --- Zone 3D --- */
-        .main-view { flex-grow: 1; background: var(--ui-bg); position: relative; display: flex; flex-direction: column; }
-        #canvas-3d { width: 100%; height: 100%; cursor: grab; }
-        .view-label { position: absolute; top: 20px; width: 100%; text-align: center; color: #9ca3af; font-size: 0.7rem; font-weight: bold; letter-spacing: 1px; pointer-events: none; }
-        
-        .bottom-ui { position: absolute; bottom: 30px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 15px; }
-        .vol-info { font-size: 0.9rem; font-weight: bold; color: #4b5563; background: rgba(255,255,255,0.8); padding: 6px 15px; border-radius: 30px; border: 1px solid #eee; }
-        .btn-gen { background: #eeeeee; border: 1px solid #cccccc; padding: 12px 35px; border-radius: 4px; font-weight: 600; cursor: pointer; }
-        .btn-gen:hover { background: #e5e5e5; }
+        .bottom-ui { position: absolute; bottom: 40px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+        .vol-display { font-size: 0.9rem; color: #555; }
+        .btn-generate { background: #e0e0e0; border: none; padding: 12px 40px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 1rem; }
 
-        /* --- Modal & Image Qualité --- */
-        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
-        .modal { background: white; width: 550px; border-radius: 8px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
-        .modal-header { padding: 15px; text-align: center; border-bottom: 1px solid #eee; font-weight: bold; }
-        .modal-body { padding: 20px; text-align: center; }
-        
-        /* Conteneur pour l'aperçu afin de garder une taille humaine à l'écran */
-        .preview-box { width: 100%; max-height: 350px; overflow: hidden; border: 1px solid #eee; border-radius: 6px; margin-bottom: 20px; background: #fafafa; display: flex; align-items: center; justify-content: center; }
-        #pattern-preview { max-width: 100%; max-height: 100%; height: auto; display: block; }
-        
-        .btn-download { background: #000; color: #fff; border: none; padding: 12px 25px; border-radius: 6px; font-weight: 600; text-decoration: none; cursor: pointer; display: inline-block; }
+        /* --- Sidebar Droite --- */
+        .sidebar-right { width: 320px; padding: 30px; border-left: 1px solid var(--border); }
+        .control-group { margin-bottom: 20px; position: relative; }
+        label { display: flex; align-items: center; font-size: 0.85rem; font-weight: bold; margin-bottom: 8px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box; }
+        .row { display: flex; gap: 10px; }
+
+        /* Tooltips */
+        .info-i { background: #eee; border-radius: 50%; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; margin-left: 5px; cursor: help; position: relative; }
+        .info-i:hover::after { content: attr(data-text); position: absolute; bottom: 25px; right: 0; background: #333; color: #fff; padding: 10px; border-radius: 5px; width: 180px; font-weight: normal; font-size: 12px; z-index: 100; }
+
+        /* Fenêtre Modale HD */
+        .modal-bg { position: fixed; inset: 0; background: rgba(255,255,255,0.9); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        .modal { background: #fff; border: 1px solid #eee; padding: 30px; border-radius: 8px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.1); width: 500px; }
+        #pattern-preview { width: 100%; border: 1px solid #eee; margin: 20px 0; }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <h1>Générateur de patron</h1>
-        <p style="font-size: 0.85rem; color: #666;">Outil de création de patrons de couture en centimètres.</p>
-        <hr style="border:0; border-top:1px solid #eee; margin: 20px 0;">
-        <p style="font-size: 0.75rem; color: #999;">Faites pivoter le modèle avec le clic gauche, zoomez avec la molette.</p>
+        <h1>zipworks</h1>
+        <div class="desc">
+            <strong>Pattern Generator</strong><br><br>
+            Outil de création de patron pour pochette zippée.<br><br>
+            <small>Logiciel en beta. Vérifiez vos calculs.</small>
+        </div>
     </div>
 
-    <div class="main-view">
-        <div class="view-label">PRÉVISUALISATION 360°</div>
+    <div class="preview-container">
+        <div class="preview-label">360° Preview</div>
+        <svg class="rotation-icon" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm-6 8c0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3c-3.31 0-6-2.69-6-6z" fill="#888"/></svg>
+        
         <canvas id="canvas-3d"></canvas>
+        
         <div class="bottom-ui">
-            <div class="vol-info" id="volume-text">Volume : 0.00L</div>
-            <button class="btn-gen" onclick="showPatternModal()">Générer le patron !</button>
+            <div class="vol-display" id="vol-text">Volume: 0.00L</div>
+            <button class="btn-generate" onclick="generateHD()">Generate pattern!</button>
         </div>
     </div>
 
     <div class="sidebar sidebar-right">
+        <div class="control-group"><label>Units: <strong>cm</strong></label></div>
+        
         <div class="control-group">
-            <label>Construction <span class="info-icon" data-tooltip="1 Panneau : une seule pièce pliée au fond. 2 Panneaux : deux faces séparées.">ⓘ</span></label>
+            <label>Construction <span class="info-i" data-text="1 panneau: tissu plié au fond. 2 panneaux: couture au fond.">ⓘ</span></label>
             <select id="construction">
-                <option value="1">1 Panneau</option>
-                <option value="2">2 Panneaux</option>
+                <option value="1">1 Panel</option>
+                <option value="2">2 Panels</option>
             </select>
         </div>
 
         <div class="control-group">
-            <label>Longueur (Haut/Bas) cm</label>
+            <label>Length (Top / Bottom)</label>
             <div class="row">
                 <input type="number" id="lenTop" value="20">
-                <input type="number" id="height" value="12">
+                <input type="number" id="lenBot" value="20">
             </div>
         </div>
 
         <div class="control-group">
-            <label>Largeur (Épaisseur) cm</label>
+            <label>Width</label>
             <input type="number" id="width" value="6">
         </div>
 
         <div class="control-group">
-            <label>Valeur de couture (cm) <span class="info-icon" data-tooltip="Espace ajouté tout autour pour l'assemblage (standard: 1cm).">ⓘ</span></label>
+            <label>Height</label>
+            <input type="number" id="height" value="12">
+        </div>
+
+        <div class="control-group">
+            <label>Seam allowance <span class="info-i" data-text="Valeur de couture à ajouter tout autour (cm).">ⓘ</span></label>
             <input type="number" id="seam" value="1" step="0.1">
         </div>
 
         <div class="control-group">
-            <label>Largeur fermeture (cm) <span class="info-icon" data-tooltip="Largeur visuelle du zip sur le dessus.">ⓘ</span></label>
-            <input type="number" id="zipWidth" value="2.5" step="0.1">
+            <label>Zipper width <span class="info-i" data-text="Largeur de la fermeture éclair sur le dessus.">ⓘ</span></label>
+            <input type="number" id="zipW" value="2.5" step="0.1">
         </div>
 
         <div class="control-group">
-            <label>Portée fermeture (%) <span class="info-icon" data-tooltip="Ajuste la longueur de la glissière sur le dessus.">ⓘ</span></label>
-            <input type="range" id="zipReach" min="10" max="100" value="90">
+            <label>Zipper reach <span class="info-i" data-text="Pourcentage de longueur occupé par le zip.">ⓘ</span></label>
+            <input type="range" id="zipR" min="10" max="100" value="90">
         </div>
     </div>
 
-    <div class="modal-overlay" id="modal">
+    <div class="modal-bg" id="modal">
         <div class="modal">
-            <div class="modal-header">Patron généré avec succès !</div>
-            <div class="modal-body">
-                <div class="preview-box">
-                    <canvas id="pattern-preview"></canvas>
-                </div>
-                <a id="download-link" class="btn-download">⬇ Télécharger le patron (PNG HD)</a>
-                <p style="font-size: 0.7rem; color: #666; margin-top: 15px;">Image optimisée pour l'impression à l'échelle.</p>
-            </div>
-            <div style="padding: 15px; text-align: right; background: #f9fafb; border-top: 1px solid #eee;">
-                <button class="btn-gen" style="padding: 5px 15px;" onclick="closeModal()">Fermer</button>
-            </div>
+            <h3>Pattern successfully generated!</h3>
+            <canvas id="pattern-preview"></canvas>
+            <a id="dl-link" style="display:block; background:#000; color:#fff; padding:15px; text-decoration:none; border-radius:4px; font-weight:bold;">Download full size PNG</a>
+            <p style="font-size:11px; color:#888; margin-top:15px;">Le fichier est optimisé pour une impression nette.</p>
+            <button onclick="document.getElementById('modal').style.display='none'" style="margin-top:10px; border:none; background:none; cursor:pointer; color:#888;">Close</button>
         </div>
     </div>
 
     <script>
-        // --- 3D ENGINE ---
-        const canvas3d = document.getElementById('canvas-3d');
+        const canvas = document.getElementById('canvas-3d');
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xf9fafb);
-        const camera = new THREE.PerspectiveCamera(45, canvas3d.clientWidth / canvas3d.clientHeight, 1, 1000);
-        camera.position.set(20, 15, 20);
-        const renderer = new THREE.WebGLRenderer({ canvas: canvas3d, antialias: true });
+        scene.background = new THREE.Color(0xffffff);
+
+        const camera = new THREE.PerspectiveCamera(35, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+        camera.position.set(30, 20, 40);
+
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        // --- FIX QUALITÉ 3D : Gestion du Pixel Ratio pour la netteté ---
+        renderer.setPixelRatio(window.devicePixelRatio);
+        
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
         const group = new THREE.Group();
         scene.add(group);
-        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-        const light = new THREE.DirectionalLight(0xffffff, 0.4);
+
+        // Lumières pour un rendu propre
+        scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+        const light = new THREE.DirectionalLight(0xffffff, 0.3);
         light.position.set(10, 20, 10);
         scene.add(light);
 
         function update3D() {
             while(group.children.length > 0) group.remove(group.children[0]);
-            
+
             const L = parseFloat(document.getElementById('lenTop').value) || 10;
             const W = parseFloat(document.getElementById('width').value) || 5;
             const H = parseFloat(document.getElementById('height').value) || 10;
-            const ZW = parseFloat(document.getElementById('zipWidth').value) || 0;
-            const ZR = parseFloat(document.getElementById('zipReach').value) / 100;
-            const isTwo = document.getElementById('construction').value === "2";
+            const ZR = parseFloat(document.getElementById('zipR').value) / 100;
+            const ZW = parseFloat(document.getElementById('zipW').value) || 0;
 
-            const meshMat = new THREE.MeshPhongMaterial({ color: 0xffffff, transparent: true, opacity: 0.5, side: THREE.DoubleSide });
-            const box = new THREE.BoxGeometry(L, H, W);
-            group.add(new THREE.Mesh(box, meshMat));
-            group.add(new THREE.LineSegments(new THREE.EdgesGeometry(box), new THREE.LineBasicMaterial({color: 0x000000})));
+            // Création de la boîte (Mesh blanc propre)
+            const geometry = new THREE.BoxGeometry(L, H, W);
+            const material = new THREE.MeshPhongMaterial({ 
+                color: 0xffffff, 
+                transparent: true, 
+                opacity: 0.8,
+                polygonOffset: true,
+                polygonOffsetFactor: 1,
+                polygonOffsetUnits: 1
+            });
+            const pouch = new THREE.Mesh(geometry, material);
+            group.add(pouch);
 
-            // Fix Portée Fermeture
-            if(ZW > 0) {
-                const zPlane = new THREE.Mesh(
-                    new THREE.PlaneGeometry(L * ZR, ZW), 
-                    new THREE.MeshBasicMaterial({color: 0x333333, side: THREE.DoubleSide})
-                );
-                zPlane.rotation.x = Math.PI/2;
-                zPlane.position.y = H/2 + 0.05;
-                group.add(zPlane);
+            // --- FIX LIGNES : EdgesGeometry pour des traits noirs nets ---
+            const edges = new THREE.EdgesGeometry(geometry);
+            const lineMat = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
+            const wireframe = new THREE.LineSegments(edges, lineMat);
+            group.add(wireframe);
+
+            // Visualisation de la fermeture (Fente sur le dessus)
+            if (ZW > 0) {
+                const zGeo = new THREE.PlaneGeometry(L * ZR, ZW);
+                const zMat = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide });
+                const zip = new THREE.Mesh(zGeo, zMat);
+                zip.rotation.x = Math.PI / 2;
+                zip.position.y = H / 2 + 0.01;
+                group.add(zip);
             }
 
-            if(isTwo) {
-                const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-L/2,-H/2,0), new THREE.Vector3(L/2,-H/2,0)]), new THREE.LineBasicMaterial({color: 0xff0000}));
-                group.add(line);
-            }
-            document.getElementById('volume-text').innerText = `Volume : ${(L*W*H/1000).toFixed(2)}L`;
+            document.getElementById('vol-text').innerText = `Volume: ${(L*W*H/1000).toFixed(2)}L`;
         }
 
-        // --- PATTERN PNG HD ---
-        function showPatternModal() {
-            const preview = document.getElementById('pattern-preview');
-            const ctx = preview.getContext('2d');
-            
+        // --- GÉNÉRATION PNG HD ---
+        function generateHD() {
+            const p = document.getElementById('pattern-preview');
+            const ctx = p.getContext('2d');
             const L = parseFloat(document.getElementById('lenTop').value);
             const W = parseFloat(document.getElementById('width').value);
             const H = parseFloat(document.getElementById('height').value);
             const S = parseFloat(document.getElementById('seam').value);
 
-            // Dimensions réelles du patron
-            const totalW_cm = L + W + (2*S);
-            const totalH_cm = H + (W/2) + (2*S);
+            const totalW = L + W + (2*S);
+            const totalH = H + (W/2) + (2*S);
+            const PPCM = 80; // Résolution élevée
 
-            // Facteur de qualité (Pixels par CM)
-            const PPCM = 40; // 40 pixels par cm = Haute définition
-            preview.width = totalW_cm * PPCM;
-            preview.height = totalH_cm * PPCM;
+            p.width = totalW * PPCM;
+            p.height = totalH * PPCM;
 
-            ctx.fillStyle = "#ffffff";
-            ctx.fillRect(0,0, preview.width, preview.height);
-            
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = 4; // Plus épais pour la HD
+            ctx.fillStyle = "#fff"; ctx.fillRect(0,0,p.width,p.height);
+            ctx.strokeStyle = "#000"; ctx.lineWidth = 5;
 
-            const pW = (L + W + 2*S) * PPCM;
-            const pH = (H + W/2 + 2*S) * PPCM;
-            const cut = (W/2) * PPCM;
-            const margin = 0; // On colle aux bords du canvas
-
+            const w = p.width; const h = p.height; const c = (W/2)*PPCM;
             ctx.beginPath();
-            ctx.moveTo(margin, margin);
-            ctx.lineTo(margin + pW, margin);
-            ctx.lineTo(margin + pW, margin + pH - cut);
-            ctx.lineTo(margin + pW - cut, margin + pH - cut);
-            ctx.lineTo(margin + pW - cut, margin + pH);
-            ctx.lineTo(margin + cut, margin + pH);
-            ctx.lineTo(margin + cut, margin + pH - cut);
-            ctx.lineTo(margin, margin + pH - cut);
-            ctx.closePath();
-            ctx.stroke();
+            ctx.moveTo(0,0); ctx.lineTo(w,0); ctx.lineTo(w, h-c);
+            ctx.lineTo(w-c, h-c); ctx.lineTo(w-c, h); ctx.lineTo(c, h);
+            ctx.lineTo(c, h-c); ctx.lineTo(0, h-c); ctx.closePath(); ctx.stroke();
 
-            // Textes dimensions
-            ctx.fillStyle = "#000";
-            ctx.font = "bold 40px sans-serif";
-            ctx.fillText(`${totalW_cm} cm`, pW/2 - 50, 50);
-            
-            ctx.save();
-            ctx.translate(50, pH/2);
-            ctx.rotate(-Math.PI/2);
-            ctx.fillText(`${totalH_cm} cm`, 0, 0);
-            ctx.restore();
-
-            document.getElementById('download-link').href = preview.toDataURL("image/png");
+            document.getElementById('dl-link').href = p.toDataURL("image/png");
             document.getElementById('modal').style.display = "flex";
         }
 
-        function closeModal() { document.getElementById('modal').style.display = "none"; }
         function animate() {
             requestAnimationFrame(animate);
             controls.update();
+            const w = canvas.clientWidth, h = canvas.clientHeight;
+            if (canvas.width !== w || canvas.height !== h) {
+                renderer.setSize(w, h, false);
+                camera.aspect = w / h; camera.updateProjectionMatrix();
+            }
             renderer.render(scene, camera);
         }
+
         document.querySelectorAll('input, select').forEach(i => i.addEventListener('input', update3D));
         update3D(); animate();
     </script>
