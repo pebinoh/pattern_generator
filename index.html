@@ -268,19 +268,11 @@
             </div>
 
             <div class="control-group">
-                <label>Longueur Zip Haut <i class="info-icon" data-tooltip="Pourcentage de la largeur du haut couverte par le zip">i</i></label>
+                <label>Extension Zip <i class="info-icon" data-tooltip="Contrôle l'ouverture : part du centre, s'élargit, puis descend sur les côtés">i</i></label>
                 <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #888; margin-bottom: 5px;">
-                    <span>0% (Centre)</span><span>100% (Tout)</span>
+                    <span>Petit (Centre)</span><span>Grand (Max)</span>
                 </div>
-                <input type="range" id="zipLengthTop" min="0" max="100" value="100">
-            </div>
-
-            <div class="control-group">
-                <label>Descente Zip <i class="info-icon" data-tooltip="Jusqu'où descend la fermeture sur les côtés">i</i></label>
-                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #888; margin-bottom: 5px;">
-                    <span>0% (Haut)</span><span>100% (Bas)</span>
-                </div>
-                <input type="range" id="zipReach" min="0" max="100" value="50">
+                <input type="range" id="zipExtension" min="0" max="100" value="70">
             </div>
 
             <button class="btn-generate" onclick="openModal()">Générer le patron !</button>
@@ -326,17 +318,43 @@
         scene.add(bagGroup);
 
         function getInputs() {
+            // Lecture des inputs
+            const lTop = Math.max(0.1, parseFloat(document.getElementById('lenTop').value) || 0);
+            const lBot = Math.max(0.1, parseFloat(document.getElementById('lenBot').value) || 0);
+            const w = Math.max(0.1, parseFloat(document.getElementById('width').value) || 0);
+            const h = Math.max(0.1, parseFloat(document.getElementById('height').value) || 0);
+            const seam = Math.max(0, parseFloat(document.getElementById('seam').value) || 0);
+            const zW = Math.max(0.1, parseFloat(document.getElementById('zipWidth').value) || 0);
+            const construction = document.getElementById('construction').value;
+            
+            // Lecture du slider unique "Extension"
+            const zipExtPercent = parseInt(document.getElementById('zipExtension').value) || 0;
+
+            // --- LOGIQUE INTELLIGENTE DU ZIP ---
+            // Le chemin total possible = Largeur Haut + (2 * Hauteur)
+            const totalPath = lTop + (2 * h);
+            // Longueur actuelle demandée par le slider
+            const currentZipLen = (zipExtPercent / 100) * totalPath;
+
+            let finalZipTopLen = 0;
+            let finalZipSideDrop = 0;
+
+            if (currentZipLen <= lTop) {
+                // Cas 1 : On est uniquement sur le dessus
+                finalZipTopLen = currentZipLen;
+                finalZipSideDrop = 0;
+            } else {
+                // Cas 2 : On a rempli le dessus, on descend sur les côtés
+                finalZipTopLen = lTop;
+                // Le reste de la longueur est divisé par 2 (car 2 côtés)
+                const remaining = currentZipLen - lTop;
+                finalZipSideDrop = Math.min(remaining / 2, h); // On ne descend pas plus bas que la hauteur
+            }
+
             return {
-                lTop: Math.max(0.1, parseFloat(document.getElementById('lenTop').value) || 0),
-                lBot: Math.max(0.1, parseFloat(document.getElementById('lenBot').value) || 0),
-                w: Math.max(0.1, parseFloat(document.getElementById('width').value) || 0),
-                h: Math.max(0.1, parseFloat(document.getElementById('height').value) || 0),
-                seam: Math.max(0, parseFloat(document.getElementById('seam').value) || 0),
-                zW: Math.max(0.1, parseFloat(document.getElementById('zipWidth').value) || 0),
-                reach: parseInt(document.getElementById('zipReach').value) || 0,
-                // Nouvel input pour la longueur du zip sur le dessus
-                zLenT: parseInt(document.getElementById('zipLengthTop').value) || 0,
-                construction: document.getElementById('construction').value
+                lTop, lBot, w, h, seam, zW, construction,
+                zipTopLen: finalZipTopLen,     // Longueur réelle sur le dessus
+                zipSideDrop: finalZipSideDrop  // Descente réelle sur chaque côté
             };
         }
 
@@ -366,14 +384,10 @@
                 bagGroup.remove(obj); 
             }
 
-            // Récupération des inputs incluant zLenT (pourcentage longueur top)
-            const { lTop, lBot, w, h, seam, zW, reach, zLenT, construction } = getInputs();
+            const { lTop, lBot, w, h, seam, zW, construction, zipTopLen, zipSideDrop } = getInputs();
             const wHalf = w / 2;
             const hHalf = h / 2;
-            const rRatio = reach / 100;
-            const zLenRatio = zLenT / 100; // Ratio de longueur sur le dessus
-
-            // Sommets principaux
+            
             const v = {
                 tfl: new THREE.Vector3(-lTop/2, hHalf, wHalf), tfr: new THREE.Vector3(lTop/2, hHalf, wHalf),
                 tbl: new THREE.Vector3(-lTop/2, hHalf, -wHalf), tbr: new THREE.Vector3(lTop/2, hHalf, -wHalf),
@@ -381,7 +395,7 @@
                 bbl: new THREE.Vector3(-lBot/2, -hHalf, -wHalf), bbr: new THREE.Vector3(lBot/2, -hHalf, -wHalf)
             };
 
-            // --- WIREFRAME PRINCIPAL ---
+            // --- WIREFRAME ---
             const mainColor = 0x333333;
             bagGroup.add(createLine(v.tfl, v.tfr, mainColor)); bagGroup.add(createLine(v.tfr, v.tbr, mainColor));
             bagGroup.add(createLine(v.tbr, v.tbl, mainColor)); bagGroup.add(createLine(v.tbl, v.tfl, mainColor));
@@ -391,7 +405,7 @@
             bagGroup.add(createLine(v.tfl, v.bfl, mainColor)); bagGroup.add(createLine(v.tfr, v.bfr, mainColor));
             bagGroup.add(createLine(v.tbr, v.bbr, mainColor)); bagGroup.add(createLine(v.tbl, v.bbl, mainColor));
 
-            // --- MARGE DE COUTURE ---
+            // --- MARGE ---
             if (seam > 0) {
                 const seamColor = 0x4a90e2; const seamOpacity = 0.5;
                 const vs = {
@@ -408,33 +422,7 @@
                 bagGroup.add(createLine(vs.tbr, vs.bbr, seamColor, false, seamOpacity)); bagGroup.add(createLine(vs.tbl, vs.bbl, seamColor, false, seamOpacity));
             }
 
-            // --- ZIPPER VISUALIZATION (Modifié pour la longueur variable) ---
-            const zHalf = zW / 2;
-            
-            // Calcul des points de départ et fin du zip sur le dessus selon le ratio zLenT
-            // Si zLenT = 100%, va de -lTop/2 à +lTop/2. Si 0%, reste à 0.
-            const topZipEndX = (lTop / 2) * zLenRatio;
-            const topZipStartX = -topZipEndX;
-
-            const pointsPath = [];
-            // Point bas gauche ajusté en X
-            if (rRatio > 0) pointsPath.push(new THREE.Vector3(topZipStartX, v.tfl.y - h*rRatio, 0));
-            // Point haut gauche ajusté en X
-            pointsPath.push(new THREE.Vector3(topZipStartX, hHalf, 0));
-            // Point haut droit ajusté en X
-            pointsPath.push(new THREE.Vector3(topZipEndX, hHalf, 0));
-            // Point bas droit ajusté en X
-            if (rRatio > 0) pointsPath.push(new THREE.Vector3(topZipEndX, v.tfr.y - h*rRatio, 0));
-
-            const path = new THREE.CatmullRomCurve3(pointsPath, false, 'catmullrom', 0.1);
-            
-            // Géométrie ruban (Extrusion)
-            const shape = new THREE.Shape();
-            shape.moveTo(-zHalf, 0); shape.lineTo(zHalf, 0); shape.lineTo(zHalf, 0.1); shape.lineTo(-zHalf, 0.1); shape.closePath();
-            const extrudeSettings = { steps: 64, bevelEnabled: false, extrudePath: path };
-            const zipGeometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-
-            // Texture hachurée
+            // --- ZIPPER (Texture hachurée) ---
             const canvas = document.createElement('canvas');
             canvas.width = 64; canvas.height = 64;
             const ctx = canvas.getContext('2d');
@@ -445,39 +433,37 @@
             texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping;
             texture.repeat.set(10, 1);
             const zipMaterial = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
-            
-            // --- Simplification visuelle : Bandes plates ---
-            // Bande Dessus (Sa largeur est maintenant variable : topZipEndX - topZipStartX)
-            const currentTopZipLen = topZipEndX - topZipStartX;
-            if(currentTopZipLen > 0.1) {
-                 const topZipGeo = new THREE.PlaneGeometry(currentTopZipLen, zW);
-                 const topZipMesh = new THREE.Mesh(topZipGeo, zipMaterial);
-                 topZipMesh.rotation.x = -Math.PI / 2;
-                 topZipMesh.position.set(0, hHalf + 0.05, 0);
-                 bagGroup.add(topZipMesh);
+
+            // 1. Bande Dessus (Centrée)
+            if (zipTopLen > 0.1) {
+                const topZipGeo = new THREE.PlaneGeometry(zipTopLen, zW);
+                const topZipMesh = new THREE.Mesh(topZipGeo, zipMaterial);
+                topZipMesh.rotation.x = -Math.PI / 2;
+                topZipMesh.position.set(0, hHalf + 0.05, 0);
+                bagGroup.add(topZipMesh);
             }
 
-            // Bandes Côtés (si reach > 0) - Position X ajustée
-            if (rRatio > 0) {
-                const sideH = h * rRatio;
-                const sideZipGeo = new THREE.PlaneGeometry(zW, sideH);
+            // 2. Bandes Côtés (Seulement si zipSideDrop > 0, ce qui implique que zipTopLen == lTop)
+            if (zipSideDrop > 0.1) {
+                const sideZipGeo = new THREE.PlaneGeometry(zW, zipSideDrop);
                 
-                // Côté Gauche (Position X = topZipStartX)
+                // Position X exacte : Au bord du sac (lTop/2)
+                const xPos = lTop / 2;
+                
+                // Côté Gauche
                 const leftZip = new THREE.Mesh(sideZipGeo, zipMaterial);
                 leftZip.rotation.y = -Math.PI / 2;
-                // On décale légèrement vers l'intérieur si ce n'est pas au bord complet pour éviter le z-fighting avec le fil de fer
-                const offset = zLenRatio < 1 ? -0.05 : 0.05;
-                leftZip.position.set(topZipStartX - offset, hHalf - sideH/2, 0);
+                // Position Y : part du haut (hHalf) et descend de zipSideDrop/2 (centre du plan)
+                leftZip.position.set(-xPos - 0.05, hHalf - zipSideDrop/2, 0);
                 bagGroup.add(leftZip);
 
-                // Côté Droit (Position X = topZipEndX)
+                // Côté Droit
                 const rightZip = new THREE.Mesh(sideZipGeo, zipMaterial);
                 rightZip.rotation.y = Math.PI / 2;
-                rightZip.position.set(topZipEndX + offset, hHalf - sideH/2, 0);
+                rightZip.position.set(xPos + 0.05, hHalf - zipSideDrop/2, 0);
                 bagGroup.add(rightZip);
             }
 
-            // Affichage Volume
             const areaTop = lTop * w;
             const areaBot = lBot * w;
             const volCm3 = ((areaTop + areaBot)/2) * h;
@@ -506,7 +492,7 @@
             camera.updateProjectionMatrix();
         });
 
-        // --- MODAL & 2D PATTERN (Mis à jour) ---
+        // --- MODAL & 2D PATTERN ---
         const modal = document.getElementById('modalOverlay');
         const cvs = document.getElementById('patternCanvas');
         const ctx2d = cvs.getContext('2d');
@@ -516,9 +502,7 @@
         window.onclick = function(event) { if (event.target == modal) closeModal(); }
 
         function drawPattern2D() {
-            // Récupération incluant zLenT
-            const { lTop, h, w, seam, zW, reach, zLenT } = getInputs();
-            const zLenRatio = zLenT / 100;
+            const { lTop, h, w, seam, zW, zipTopLen, zipSideDrop } = getInputs();
 
             ctx2d.clearRect(0, 0, cvs.width, cvs.height);
             ctx2d.fillStyle = "#fff"; ctx2d.fillRect(0,0, cvs.width, cvs.height);
@@ -528,13 +512,13 @@
             const drawH = totalH * scale; const drawW = totalW * scale; const sScale = seam * scale;
             const x = padX; const y = padY;
             
-            // Marge extérieure
+            // Marge
             ctx2d.strokeStyle = "rgba(74, 144, 226, 0.5)"; ctx2d.lineWidth = 1; ctx2d.setLineDash([5, 3]);
             ctx2d.beginPath(); ctx2d.moveTo(x, y); ctx2d.lineTo(x + drawW, y); ctx2d.lineTo(x + drawW, y + (h+seam)*scale);
             ctx2d.lineTo(x + drawW + (w/2)*scale, y + (h+seam)*scale); ctx2d.lineTo(x + drawW + (w/2)*scale, y + drawH);
             ctx2d.lineTo(x, y + drawH); ctx2d.closePath(); ctx2d.stroke(); ctx2d.setLineDash([]);
 
-            // Ligne de coupe intérieure
+            // Coupe
             ctx2d.strokeStyle = "#333"; ctx2d.lineWidth = 2; ctx2d.beginPath();
             const xi = x + sScale; const yi = y + sScale;
             const dWi = (lTop/2)*scale; const dHi = (h + w/2)*scale;
@@ -543,24 +527,23 @@
             ctx2d.lineTo(xi, yi + dHi); ctx2d.closePath(); ctx2d.stroke();
             ctx2d.fillStyle = "rgba(0,0,0,0.05)"; ctx2d.fill();
 
-            // --- REPRESENTATION ZIP (Ajustée pour longueur variable) ---
+            // Zip 2D
             const zScale = zW * scale;
             ctx2d.fillStyle = "rgba(100, 100, 100, 0.2)";
             
-            // Calcul de la longueur dessinée sur le dessus selon le ratio
-            const drawnZipTopLen = dWi * zLenRatio;
+            // Longueur dessinée sur le dessus (moitié de la longueur totale du zip, car on dessine un quart de patron)
+            const drawnZipTopLen = (zipTopLen / 2) * scale;
 
-            // Bande sur le dessus (partant du centre 'xi' vers la droite)
             if(drawnZipTopLen > 0) {
+                // Bande horizontale
                 ctx2d.fillRect(xi, yi - zScale/2, drawnZipTopLen, zScale/2);
             }
             
-            // Bande sur le côté (descente)
-            const reachH = h * (reach/100) * scale;
-            if(reachH > 0) {
-                // La descente commence là où s'arrête la bande du dessus : xi + drawnZipTopLen
-                // On décale de zScale/2 vers la gauche pour centrer la bande verticale sur ce point
-                ctx2d.fillRect(xi + drawnZipTopLen - zScale/2, yi, zScale/2, reachH);
+            const drawnZipSideDrop = zipSideDrop * scale;
+            if(drawnZipSideDrop > 0) {
+                // Bande verticale (si le zip est arrivé au bout, drawnZipTopLen == dWi)
+                // On positionne la descente exactement à l'angle
+                ctx2d.fillRect(xi + dWi - zScale/2, yi, zScale/2, drawnZipSideDrop);
             }
 
             // Annotations
@@ -570,15 +553,27 @@
             ctx2d.textAlign = "center"; ctx2d.fillText(`${(w/2 + seam).toFixed(1)}`, xi + dWi + (w/2*scale)/2, y + drawH + 15);
             if(seam > 0) { ctx2d.fillStyle = "rgba(74, 144, 226, 1)"; ctx2d.fillText(`Marge: ${seam}cm`, x + drawW/2, y + drawH + 35); }
 
-            // Point Zip Stop (Ajusté en position X)
-            if(reach > 0 && reach < 100) {
+            // Point "Arrêt Zip"
+            if (zipTopLen > 0) {
                  ctx2d.fillStyle = "blue";
                  ctx2d.beginPath();
-                 // Position X du point : xi + drawnZipTopLen
-                 ctx2d.arc(xi + drawnZipTopLen, yi + reachH, 3, 0, 2*Math.PI);
+                 let dotX = xi + drawnZipTopLen;
+                 let dotY = yi;
+                 
+                 // Si on descend, le point Y change
+                 if (drawnZipSideDrop > 0) {
+                     dotX = xi + dWi; // Coin
+                     dotY = yi + drawnZipSideDrop;
+                 } else {
+                     // Si on est sur le dessus, le Y est au centre du zip
+                     // (mais pour le dessin technique, on le met souvent sur la ligne de couture)
+                     dotY = yi; 
+                 }
+
+                 ctx2d.arc(dotX, dotY, 3, 0, 2*Math.PI);
                  ctx2d.fill();
                  ctx2d.textAlign = "left";
-                 ctx2d.fillText("Arrêt Zip", xi + drawnZipTopLen + 5, yi + reachH + 4);
+                 ctx2d.fillText("Arrêt Zip", dotX + 5, dotY + 4);
             }
         }
 
