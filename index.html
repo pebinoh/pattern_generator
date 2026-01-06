@@ -3,231 +3,265 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Générateur de Patron</title>
+    <title>Zipworks - Générateur de Patron</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <style>
-        :root { --accent: #2563eb; --bg: #f8fafc; --panel: #ffffff; }
-        body { font-family: 'Inter', system-ui, sans-serif; margin: 0; display: flex; height: 100vh; background: var(--bg); color: #1e293b; }
+        :root { --bg: #ffffff; --ui-bg: #f9fafb; --border: #e5e7eb; --accent: #000000; }
+        body { font-family: -apple-system, system-ui, sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; color: #111827; }
 
-        /* Sidebar Gauche */
-        .info-panel { width: 280px; padding: 30px; border-right: 1px solid #e2e8f0; background: var(--panel); overflow-y: auto; }
-        h1 { font-size: 2rem; margin: 0; letter-spacing: -1px; color: #000; }
-        .description { font-size: 0.9rem; line-height: 1.5; color: #64748b; margin-top: 20px; }
-
-        /* Zone Centrale 3D */
-        .preview-container { flex-grow: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        #canvas-3d { width: 100%; height: 100%; outline: none; cursor: move; }
-        .labels { position: absolute; top: 20px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; }
+        /* --- Interface Latérale --- */
+        .sidebar { width: 320px; padding: 25px; border-right: 1px solid var(--border); overflow-y: auto; background: white; z-index: 10; }
+        .sidebar-right { border-right: none; border-left: 1px solid var(--border); }
+        h1 { font-size: 1.8rem; margin: 0 0 15px 0; font-weight: 800; }
+        .desc { font-size: 0.9rem; color: #4b5563; margin-bottom: 20px; line-height: 1.4; }
         
-        .overlay-ui { position: absolute; bottom: 30px; display: flex; flex-direction: column; align-items: center; gap: 15px; }
-        .volume-tag { background: rgba(255,255,255,0.8); padding: 5px 15px; border-radius: 20px; font-weight: bold; backdrop-filter: blur(4px); border: 1px solid #e2e8f0; }
-        .btn-main { background: #000; color: #fff; border: none; padding: 12px 30px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: transform 0.2s; }
-        .btn-main:hover { transform: translateY(-2px); background: #222; }
-
-        /* Sidebar Droite */
-        .controls-panel { width: 320px; padding: 25px; background: var(--panel); border-left: 1px solid #e2e8f0; overflow-y: auto; }
-        .control-group { margin-bottom: 18px; }
-        label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: #475569; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; transition: border 0.2s; }
-        input:focus { border-color: var(--accent); outline: none; }
-        .row { display: flex; gap: 10px; }
-        .help-icon { cursor: help; color: #94a3b8; margin-left: 4px; }
+        .control-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 5px; color: #374151; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box; }
+        .row { display: flex; gap: 8px; }
         
-        hr { border: 0; border-top: 1px solid #f1f5f9; margin: 20px 0; }
+        /* --- Zone 3D --- */
+        .main-view { flex-grow: 1; background: var(--ui-bg); position: relative; display: flex; flex-direction: column; }
+        #canvas-3d { width: 100%; height: 100%; cursor: grab; }
+        .view-label { position: absolute; top: 20px; width: 100%; text-align: center; color: #9ca3af; font-size: 0.8rem; font-weight: 600; pointer-events: none; }
+        .bottom-ui { position: absolute; bottom: 30px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 15px; }
+        .vol-info { font-size: 0.9rem; font-weight: bold; color: #4b5563; }
+        .btn-gen { background: #eeeeee; border: 1px solid #cccccc; padding: 12px 35px; border-radius: 4px; font-weight: 600; cursor: pointer; }
+
+        /* --- MODAL (Fenêtre de succès) --- */
+        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 100; }
+        .modal { background: white; width: 500px; padding: 0; border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); overflow: hidden; position: relative; }
+        .modal-header { padding: 15px; text-align: center; border-bottom: 1px solid #eee; position: relative; }
+        .close-btn { position: absolute; right: 15px; top: 15px; cursor: pointer; font-size: 1.2rem; color: #999; }
+        .modal-body { padding: 20px; text-align: center; }
+        #pattern-preview { max-width: 100%; height: auto; border: 1px solid #eee; margin-bottom: 20px; background: #fdfdfd; }
+        .btn-download { background: #eeeeee; border: 1px solid #cccccc; padding: 12px 20px; border-radius: 4px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: black; }
+        .safari-note { font-size: 0.75rem; color: #666; margin-top: 20px; line-height: 1.4; padding: 0 20px; }
     </style>
 </head>
 <body>
 
-    <div class="info-panel">
+    <div class="sidebar">
         <h1>zipworks</h1>
-        <p><strong>Générateur de Patron</strong></p>
-        <div class="description">
-            Cet outil génère un patron de couture pour une pochette rectangulaire avec fermeture éclair sur le dessus.
-            <br><br>
-            Ajustez les dimensions à droite, la vue 3D se met à jour instantanément.
+        <p class="desc">Générez un patron de couture personnalisé pour vos pochettes.</p>
+        <div class="control-group">
+            <label>Comment ça marche ?</label>
+            <p style="font-size: 0.8rem;">Modifiez les dimensions à droite. Le patron inclut des découpes d'angles pour créer le volume automatiquement.</p>
         </div>
-        <hr>
-        <p style="font-size: 0.75rem; color: #94a3b8;">Logiciel en version beta. Mesurez toujours votre tissu avant de couper.</p>
+        <hr style="border:0; border-top:1px solid #eee; margin: 20px 0;">
+        <p style="font-size: 0.7rem; color: #999;">Logiciel en beta. Vérifiez vos mesures.</p>
     </div>
 
-    <div class="preview-container">
-        <div class="labels">Prévisualisation 360°</div>
+    <div class="main-view">
+        <div class="view-label">360° Aperçu</div>
         <canvas id="canvas-3d"></canvas>
-        <div class="overlay-ui">
-            <div class="volume-tag" id="volume-text">Volume : 0.00 L</div>
-            <button class="btn-main" onclick="downloadPattern()">Générer le patron (SVG)</button>
+        <div class="bottom-ui">
+            <div class="vol-info" id="volume-text">Volume : 0.00L</div>
+            <button class="btn-gen" onclick="showPatternModal()">Générer le patron !</button>
         </div>
     </div>
 
-    <div class="controls-panel">
+    <div class="sidebar sidebar-right">
+        <div class="control-group"><label>Unités : <strong>cm</strong></label></div>
+        
         <div class="control-group">
-            <label>Unité : <strong>Centimètres (cm)</strong></label>
-        </div>
-
-        <div class="control-group">
-            <label>Construction</label>
+            <label>Construction ⓘ</label>
             <select id="construction">
-                <option value="1panel">1 Panneau (enveloppant)</option>
-                <option value="2panels">2 Panneaux (séparés)</option>
+                <option value="1">1 Panneau</option>
+                <option value="2">2 Panneaux</option>
             </select>
         </div>
 
         <div class="control-group">
             <label>Longueur (Haut / Bas)</label>
             <div class="row">
-                <input type="number" id="lenTop" value="20" step="0.5">
-                <input type="number" id="lenBot" value="20" step="0.5">
+                <input type="number" id="lenTop" value="20">
+                <input type="number" id="lenBot" value="20">
             </div>
         </div>
 
         <div class="control-group">
-            <label>Largeur (Épaisseur)</label>
-            <input type="number" id="width" value="6" step="0.5">
+            <label>Largeur (Profondeur)</label>
+            <input type="number" id="width" value="6">
         </div>
 
         <div class="control-group">
             <label>Hauteur</label>
-            <input type="number" id="height" value="12" step="0.5">
+            <input type="number" id="height" value="12">
         </div>
 
-        <hr>
-
         <div class="control-group">
-            <label>Valeur de couture (cm)</label>
+            <label>Valeur de couture ⓘ</label>
             <input type="number" id="seam" value="1" step="0.1">
         </div>
 
         <div class="control-group">
-            <label>Largeur fermeture éclair (cm)</label>
+            <label>Largeur fermeture éclair ⓘ</label>
             <input type="number" id="zipWidth" value="2.5" step="0.1">
         </div>
 
         <div class="control-group">
-            <label>Ouverture fermeture (%)</label>
+            <label>Portée fermeture ⓘ</label>
             <input type="range" id="zipReach" min="10" max="100" value="90">
         </div>
     </div>
 
+    <div class="modal-overlay" id="modal">
+        <div class="modal">
+            <div class="modal-header">
+                Patron généré avec succès !
+                <span class="close-btn" onclick="closeModal()">×</span>
+            </div>
+            <div class="modal-body">
+                <canvas id="pattern-preview"></canvas>
+                <br>
+                <a id="download-link" class="btn-download">
+                    <span>⬇</span> Télécharger le patron complet en PNG
+                </a>
+                <p class="safari-note">Sur Safari iOS, ne tenez pas compte de la notification d'échec de reconnexion - le fichier se télécharge correctement.</p>
+            </div>
+            <div style="padding: 15px; text-align: right; border-top: 1px solid #eee;">
+                <button class="btn-gen" style="padding: 8px 20px;" onclick="closeModal()">Fermer</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // --- CONFIGURATION THREE.JS ---
-        const canvas = document.querySelector('#canvas-3d');
+        // --- 3D ENGINE ---
+        const canvas3d = document.getElementById('canvas-3d');
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xf8fafc);
+        scene.background = new THREE.Color(0xf9fafb);
 
-        const camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
-        camera.position.set(30, 20, 30);
+        const camera = new THREE.PerspectiveCamera(45, canvas3d.clientWidth / canvas3d.clientHeight, 1, 1000);
+        camera.position.set(25, 20, 25);
 
-        const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas3d, antialias: true });
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
 
-        // Lumières
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-        scene.add(ambientLight);
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
-        dirLight.position.set(10, 20, 10);
-        scene.add(dirLight);
+        const group = new THREE.Group();
+        scene.add(group);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+        const light = new THREE.DirectionalLight(0xffffff, 0.5);
+        light.position.set(10, 20, 10);
+        scene.add(light);
 
-        // Objets 3D
-        let pouchGroup = new THREE.Group();
-        scene.add(pouchGroup);
-
-        function createPouch() {
-            // Nettoyer l'ancien groupe
-            while(pouchGroup.children.length > 0){ 
-                pouchGroup.remove(pouchGroup.children[0]); 
-            }
+        function update3D() {
+            while(group.children.length > 0) group.remove(group.children[0]);
 
             const L = parseFloat(document.getElementById('lenTop').value) || 1;
             const W = parseFloat(document.getElementById('width').value) || 1;
             const H = parseFloat(document.getElementById('height').value) || 1;
-            const zWidth = parseFloat(document.getElementById('zipWidth').value) || 1;
-            const zReach = parseFloat(document.getElementById('zipReach').value) / 100;
+            const Z = parseFloat(document.getElementById('zipWidth').value) || 0;
+            const isTwoPanels = document.getElementById('construction').value === "2";
 
-            // Matière Pochette
-            const material = new THREE.MeshPhongMaterial({ color: 0xffffff, transparent: true, opacity: 0.7, side: THREE.DoubleSide });
-            const lineMat = new THREE.LineBasicMaterial({ color: 0x000000 });
+            // Matériaux
+            const meshMat = new THREE.MeshPhongMaterial({ color: 0xffffff, transparent: true, opacity: 0.6, side: THREE.DoubleSide });
+            const lineMat = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
 
-            // Corps de la pochette
-            const geom = new THREE.BoxGeometry(L, H, W);
-            const mesh = new THREE.Mesh(geom, material);
-            const edges = new THREE.EdgesGeometry(geom);
-            const wireframe = new THREE.LineSegments(edges, lineMat);
-            
-            pouchGroup.add(mesh);
-            pouchGroup.add(wireframe);
+            // Géométrie (on crée les faces manuellement pour simuler l'écartement de la fermeture)
+            const box = new THREE.BoxGeometry(L, H, W);
+            const pouch = new THREE.Mesh(box, meshMat);
+            group.add(pouch);
 
-            // Visualisation Fermeture Éclair (Sur le dessus)
-            const zipGeom = new THREE.PlaneGeometry(L * zReach, zWidth);
-            const zipMat = new THREE.MeshBasicMaterial({ color: 0x333333, side: THREE.DoubleSide });
-            const zipper = new THREE.Mesh(zipGeom, zipMat);
-            zipper.rotation.x = Math.PI / 2;
-            zipper.position.y = H / 2 + 0.01; // Juste au dessus
-            pouchGroup.add(zipper);
+            const edges = new THREE.EdgesGeometry(box);
+            const wire = new THREE.LineSegments(edges, lineMat);
+            group.add(wire);
 
-            // Petite ligne centrale pour simuler les dents de la fermeture
-            const zipLineGeom = new THREE.BufferGeometry().setFromPoints([
-                new THREE.Vector3(-L*zReach/2, H/2 + 0.02, 0),
-                new THREE.Vector3(L*zReach/2, H/2 + 0.02, 0)
-            ]);
-            const zipLine = new THREE.Line(zipLineGeom, new THREE.LineBasicMaterial({color: 0xaaaaaa}));
-            pouchGroup.add(zipLine);
+            // Indicateur Fermeture Éclair (L'écart sur le dessus)
+            if (Z > 0) {
+                const zGeo = new THREE.PlaneGeometry(L * 0.95, Z);
+                const zMat = new THREE.MeshBasicMaterial({ color: 0x333333, side: THREE.DoubleSide });
+                const zMesh = new THREE.Mesh(zGeo, zMat);
+                zMesh.rotation.x = Math.PI/2;
+                zMesh.position.y = H/2 + 0.05;
+                group.add(zMesh);
+            }
 
-            // Volume en Litres (cm3 / 1000)
-            const volume = ((L * W * H) / 1000).toFixed(2);
-            document.getElementById('volume-text').innerText = `Volume : ${volume} L`;
+            // Ligne de fond pour "2 Panneaux"
+            if (isTwoPanels) {
+                const bottomLineGeo = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(-L/2, -H/2, 0),
+                    new THREE.Vector3(L/2, -H/2, 0)
+                ]);
+                const bottomLine = new THREE.Line(bottomLineGeo, new THREE.LineBasicMaterial({color: 0xff0000}));
+                group.add(bottomLine);
+            }
+
+            document.getElementById('volume-text').innerText = `Volume : ${(L*W*H/1000).toFixed(2)}L`;
         }
 
-        // --- GÉNÉRATION DU PATRON SVG ---
-        function downloadPattern() {
+        // --- PATTERN GENERATION (CANVAS TO PNG) ---
+        function showPatternModal() {
+            const modal = document.getElementById('modal');
+            const previewCanvas = document.getElementById('pattern-preview');
+            const ctx = previewCanvas.getContext('2d');
+
             const L = parseFloat(document.getElementById('lenTop').value);
             const W = parseFloat(document.getElementById('width').value);
             const H = parseFloat(document.getElementById('height').value);
             const S = parseFloat(document.getElementById('seam').value);
 
-            // Calcul simplifié pour un patron "Boite" (1 seul panneau déplié)
-            // Largeur totale = Longueur + 2x Couture
-            // Hauteur totale = (Hauteur x 2) + Largeur + 2x Couture
-            const totalWidth = L + (2 * S);
-            const totalHeight = (H * 2) + W + (2 * S);
+            // Calcul du patron (Rectangle avec coins découpés pour le fond)
+            // Dimensions totales du tissu pour une face
+            const fabricW = L + W + (2*S);
+            const fabricH = H + (W/2) + (2*S);
 
-            const svgContent = `
-            <svg width="${totalWidth}cm" height="${totalHeight}cm" viewBox="0 0 ${totalWidth} ${totalHeight}" xmlns="http://www.w3.org/2000/svg">
-                <rect x="0" y="0" width="${totalWidth}" height="${totalHeight}" fill="none" stroke="black" stroke-width="0.1" />
-                <text x="1" y="2" font-size="1">Patron Pochette - ${L}x${H}x${W} cm</text>
-                <text x="1" y="4" font-size="0.8">Valeur couture: ${S} cm incluse</text>
-                <line x1="0" y1="${S + H}" x2="${totalWidth}" y2="${S + H}" stroke="blue" stroke-dasharray="0.5" stroke-width="0.05" />
-                <line x1="0" y1="${S + H + W}" x2="${totalWidth}" y2="${S + H + W}" stroke="blue" stroke-dasharray="0.5" stroke-width="0.05" />
-            </svg>`;
+            previewCanvas.width = 400;
+            previewCanvas.height = 300;
+            const scale = Math.min(350/fabricW, 250/fabricH);
 
-            const blob = new Blob([svgContent], {type: 'image/svg+xml'});
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `patron_pochette_${L}x${H}.svg`;
-            link.click();
+            ctx.clearRect(0, 0, 400, 300);
+            ctx.strokeStyle = "#000";
+            ctx.lineWidth = 2;
+
+            // Dessin du tracé "L-Shape" typique des patrons de sacs
+            const startX = 50; const startY = 50;
+            const pW = fabricW * scale; const pH = fabricH * scale;
+            const cut = (W/2) * scale;
+
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(startX + pW, startY); // Haut
+            ctx.lineTo(startX + pW, startY + pH - cut); // Droite
+            ctx.lineTo(startX + pW - cut, startY + pH - cut); // Encoche droite
+            ctx.lineTo(startX + pW - cut, startY + pH); // Bas vers encoche
+            ctx.lineTo(startX + cut, startY + pH); // Bas
+            ctx.lineTo(startX + cut, startY + pH - cut); // Encoche gauche
+            ctx.lineTo(startX, startY + pH - cut); // Gauche
+            ctx.closePath();
+            ctx.stroke();
+
+            // Cotes (Flèches et texte)
+            ctx.font = "12px sans-serif";
+            ctx.fillText(`${fabricW} cm`, startX + pW/2 - 10, startY - 10);
+            ctx.fillText(`${fabricH} cm`, startX - 45, startY + pH/2);
+
+            // Préparation du téléchargement
+            const dataURL = previewCanvas.toDataURL("image/png");
+            const dl = document.getElementById('download-link');
+            dl.href = dataURL;
+            dl.download = `patron_zipworks_${L}x${H}.png`;
+
+            modal.style.display = "flex";
         }
 
-        // --- EVENTS ---
-        const inputs = document.querySelectorAll('input, select');
-        inputs.forEach(input => input.addEventListener('input', createPouch));
+        function closeModal() { document.getElementById('modal').style.display = "none"; }
 
+        // --- RENDER LOOP ---
         function animate() {
             requestAnimationFrame(animate);
             controls.update();
-            
-            const w = canvas.clientWidth;
-            const h = canvas.clientHeight;
-            if (canvas.width !== w || canvas.height !== h) {
+            const w = canvas3d.clientWidth, h = canvas3d.clientHeight;
+            if (canvas3d.width !== w || canvas3d.height !== h) {
                 renderer.setSize(w, h, false);
-                camera.aspect = w / h;
-                camera.updateProjectionMatrix();
+                camera.aspect = w / h; camera.updateProjectionMatrix();
             }
             renderer.render(scene, camera);
         }
 
-        createPouch();
+        document.querySelectorAll('input, select').forEach(i => i.addEventListener('input', update3D));
+        update3D();
         animate();
     </script>
 </body>
