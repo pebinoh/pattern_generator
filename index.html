@@ -13,7 +13,6 @@
             --primary: #333;
             --accent: #4a90e2;
             --bg: #ffffff;
-            --gray-light: #f5f5f5;
             --border: #ddd;
         }
 
@@ -147,10 +146,10 @@
         <p>Créez votre patron de trousse ou sac "Boxy".</p>
         <h2>Nouveautés</h2>
         <p>
-            <strong>Zip complet :</strong> Le curseur d'extension contrôle désormais le zip sur les 3 côtés (côté gauche, dessus, côté droit).
+            <strong>Zip Symétrique :</strong> Le zip commence désormais au milieu du dessus et s'étend vers les côtés (0% = point central, 100% = ouverture totale).
         </p>
         <p>
-            <strong>Forme en U :</strong> Le patron généré comporte maintenant deux décrochements (haut et bas) pour former les soufflets, créant une forme en "U" couché (ou C) prête à coudre.
+            <strong>Patron Asymétrique :</strong> Le patron 2D généré respecte la forme à renfoncement (barre du haut plus courte que celle du bas).
         </p>
     </div>
 
@@ -179,18 +178,18 @@
             </div>
 
             <div class="control-group">
-                <label>Longueur (Top) <i class="info-icon" data-tooltip="Longueur horizontale du haut">i</i></label>
-                <input type="number" id="lenTop" value="20" step="0.5" min="5">
+                <label>Largeur Bas (ex: 4.4) <i class="info-icon" data-tooltip="La partie la plus large du patron">i</i></label>
+                <input type="number" id="lenTop" value="22" step="0.5" min="5">
             </div>
 
             <div class="control-group">
-                <label>Profondeur (Soufflet) <i class="info-icon" data-tooltip="Largeur du côté">i</i></label>
-                <input type="number" id="width" value="8" step="0.5" min="2">
+                <label>Profondeur/Encoche (ex: 0.8) <i class="info-icon" data-tooltip="Définit l'épaisseur des bras haut/bas">i</i></label>
+                <input type="number" id="width" value="4" step="0.5" min="2">
             </div>
 
             <div class="control-group">
-                <label>Hauteur <i class="info-icon" data-tooltip="Hauteur verticale finale">i</i></label>
-                <input type="number" id="height" value="12" step="0.5" min="2">
+                <label>Hauteur Centrale (ex: 2.2) <i class="info-icon" data-tooltip="La hauteur du renfoncement central">i</i></label>
+                <input type="number" id="height" value="11" step="0.5" min="2">
             </div>
 
             <div class="control-group">
@@ -204,9 +203,9 @@
             </div>
 
             <div class="control-group">
-                 <label>Extension Zip (0% - 100%) <i class="info-icon" data-tooltip="Contrôle l'ouverture : 0% = rien, 100% = descend jusqu'en bas des côtés">i</i></label>
+                 <label>Ouverture Zip (Symétrique)</label>
                 <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #888; margin-bottom: 5px;">
-                    <span>Rien</span><span>Tout le tour</span>
+                    <span>Centre</span><span>Max</span>
                 </div>
                 <input type="range" id="zipExtension" min="0" max="100" value="85">
             </div>
@@ -248,45 +247,54 @@
 
         // Inputs & Logic
         function getInputs() {
-            const lTop = Math.max(0.1, parseFloat(document.getElementById('lenTop').value) || 0);
-            const w = Math.max(0.1, parseFloat(document.getElementById('width').value) || 0);
-            const h = Math.max(0.1, parseFloat(document.getElementById('height').value) || 0);
+            // Mapping des inputs pour correspondre à la logique "Box" mais avec les noms du schéma
+            const lMain = Math.max(0.1, parseFloat(document.getElementById('lenTop').value) || 0); // Largeur Totale (4.4)
+            const notchH = Math.max(0.1, parseFloat(document.getElementById('width').value) || 0); // Hauteur bras (0.8)
+            const midH = Math.max(0.1, parseFloat(document.getElementById('height').value) || 0); // Hauteur centre (2.2)
+            
+            // Reconstitution des dimensions de la boite 3D
+            const wBox = lMain; // Longueur
+            const hBox = midH + notchH + notchH; // Hauteur totale visualisée à plat ? 
+            // Attention : Pour la 3D, "Profondeur" (Soufflet) = notchH * 2. 
+            // "Hauteur" du sac fini = midH.
+            
+            const depth3D = notchH * 2; 
+            const height3D = midH;
+            const width3D = lMain; // On simplifie, la largeur du sac fini est souvent lMain - profondeur/2.
+            
             const seam = Math.max(0, parseFloat(document.getElementById('seam').value) || 0);
             const zW = Math.max(0.1, parseFloat(document.getElementById('zipWidth').value) || 0);
             const construction = document.getElementById('construction').value;
             const zipPercent = parseInt(document.getElementById('zipExtension').value) || 0;
 
-            // Calcul du trajet total du zip pour la 3D
-            // Trajet : Monter côté gauche (h) + Traverser (lTop) + Descendre côté droit (h)
-            // Note: En 3D on visualise le volume fini. 
-            // Si le sac est une boite, le zip monte sur la tranche verticale ? 
-            // Pour ce type de modèle "Wide Mouth", le zip parcourt le périmètre supérieur.
-            // On va simuler l'ouverture : 
-            // 0 -> lTop (sur le dessus seulement)
-            // > lTop -> descend sur les côtés.
+            // --- Calcul Zip Symétrique ---
+            // Trajet Total = Monter (Gauche) + Traverser (Haut) + Descendre (Droite)
+            // Ici, le "Haut" correspond à la longueur lMain.
+            // Les côtés correspondent à height3D.
+            const totalPath = height3D + lMain + height3D;
             
-            // Correction demande utilisateur : "0% rien sur le dessus à 100% sur mes 3 faces"
-            // Trajet Total = Hauteur(Gauche) + Longueur(Top) + Hauteur(Droite)
-            const totalZipPath = h + lTop + h;
-            const currentZipDist = totalZipPath * (zipPercent / 100);
+            // Longueur souhaitée
+            const targetLen = totalPath * (zipPercent / 100);
+            
+            // On part du milieu du top.
+            // La moitié de la longueur cible part vers la gauche, l'autre vers la droite.
+            const halfLen = targetLen / 2;
+            
+            // Calcul de la couverture sur le TOP (centré)
+            // Max couverture top = lMain / 2 (dans chaque direction)
+            const topCoverOneSide = Math.min(halfLen, lMain / 2);
+            const zipTopLen = topCoverOneSide * 2; // Longueur totale sur le dessus
+            
+            // Calcul de la descente sur les COTÉS
+            // Si halfLen > lMain/2, le reste descend.
+            const sideDrop = Math.max(0, halfLen - (lMain / 2));
 
-            let drawLeft = 0, drawTop = 0, drawRight = 0;
-
-            if (currentZipDist <= h) {
-                // Seulement en train de monter à gauche (cas rare mais logique 0-100)
-                drawLeft = currentZipDist;
-            } else if (currentZipDist <= (h + lTop)) {
-                // Gauche complète + partie du top
-                drawLeft = h;
-                drawTop = currentZipDist - h;
-            } else {
-                // Gauche complète + Top complet + partie droite
-                drawLeft = h;
-                drawTop = lTop;
-                drawRight = currentZipDist - (h + lTop);
-            }
-
-            return { lTop, w, h, seam, zW, construction, zipPercent, drawLeft, drawTop, drawRight };
+            return { 
+                lMain, notchH, midH, 
+                width3D, height3D, depth3D, 
+                seam, zW, construction, zipPercent,
+                zipTopLen, sideDrop
+            };
         }
 
         function createLine(p1, p2, color, dashed = false) {
@@ -310,52 +318,40 @@
                 bagGroup.remove(obj); 
             }
 
-            const { lTop, w, h, seam, zW, construction, drawLeft, drawTop, drawRight } = getInputs();
-            const wHalf = w / 2;
-            const hHalf = h / 2;
+            const { width3D, height3D, depth3D, seam, zW, construction, zipTopLen, sideDrop } = getInputs();
             
-            // Vertices principaux (Boite)
+            // Dimensions pour le wireframe centré
+            const x = width3D / 2;
+            const y = height3D / 2;
+            const z = depth3D / 2;
+            
+            // Vertices
             const v = {
-                tfl: new THREE.Vector3(-lTop/2, hHalf, wHalf), tfr: new THREE.Vector3(lTop/2, hHalf, wHalf),
-                tbl: new THREE.Vector3(-lTop/2, hHalf, -wHalf), tbr: new THREE.Vector3(lTop/2, hHalf, -wHalf),
-                bfl: new THREE.Vector3(-lTop/2, -hHalf, wHalf), bfr: new THREE.Vector3(lTop/2, -hHalf, wHalf),
-                bbl: new THREE.Vector3(-lTop/2, -hHalf, -wHalf), bbr: new THREE.Vector3(lTop/2, -hHalf, -wHalf)
+                tfl: new THREE.Vector3(-x, y, z), tfr: new THREE.Vector3(x, y, z),
+                tbl: new THREE.Vector3(-x, y, -z), tbr: new THREE.Vector3(x, y, -z),
+                bfl: new THREE.Vector3(-x, -y, z), bfr: new THREE.Vector3(x, -y, z),
+                bbl: new THREE.Vector3(-x, -y, -z), bbr: new THREE.Vector3(x, -y, -z)
             };
 
-            // Ghost Box
-            const boxGeo = new THREE.BoxGeometry(lTop, h, w);
-            const boxMat = new THREE.MeshBasicMaterial({ color: 0xeeeeee, transparent: true, opacity: 0.3, depthWrite: false });
-            bagGroup.add(new THREE.Mesh(boxGeo, boxMat));
-
-            // Wireframe
+            // Wireframe Principal
             const c = 0x333333;
-            // Top rect
+            // Top
             bagGroup.add(createLine(v.tfl, v.tfr, c)); bagGroup.add(createLine(v.tfr, v.tbr, c));
             bagGroup.add(createLine(v.tbr, v.tbl, c)); bagGroup.add(createLine(v.tbl, v.tfl, c));
-            // Bottom rect
-            const bDashed = construction === "2"; // Dashed if 2 panels (seam), solid if 1 (fold) ? Actually logic is reverse usually but implies structure.
+            // Bottom
+            const bDashed = construction === "2";
             bagGroup.add(createLine(v.bfl, v.bfr, c, bDashed)); bagGroup.add(createLine(v.bfr, v.bbr, c, bDashed));
             bagGroup.add(createLine(v.bbr, v.bbl, c, bDashed)); bagGroup.add(createLine(v.bbl, v.bfl, c, bDashed));
-            // Verticals
+            // Verticales
             bagGroup.add(createLine(v.tfl, v.bfl, c)); bagGroup.add(createLine(v.tfr, v.bfr, c));
             bagGroup.add(createLine(v.tbr, v.bbr, c)); bagGroup.add(createLine(v.tbl, v.bbl, c));
 
-            // Marge de couture (Bleu)
-            if (seam > 0) {
-                const sC = 0x4a90e2; 
-                const s = seam;
-                // Calcul simple d'une boite englobante pour la marge
-                const vs = {
-                    tfl: new THREE.Vector3(-lTop/2-s, hHalf+s, wHalf+s), tfr: new THREE.Vector3(lTop/2+s, hHalf+s, wHalf+s),
-                    bbr: new THREE.Vector3(lTop/2+s, -hHalf-s, -wHalf-s), bbl: new THREE.Vector3(-lTop/2-s, -hHalf-s, -wHalf-s)
-                };
-                // Juste quelques lignes pour visualiser l'idée
-                bagGroup.add(createLine(vs.tfl, vs.tfr, sC, true));
-                bagGroup.add(createLine(vs.bbl, vs.bbr, sC, true));
-            }
+            // Ghost Box
+            const boxGeo = new THREE.BoxGeometry(width3D, height3D, depth3D);
+            const boxMat = new THREE.MeshBasicMaterial({ color: 0xeeeeee, transparent: true, opacity: 0.3, depthWrite: false });
+            bagGroup.add(new THREE.Mesh(boxGeo, boxMat));
 
-            // --- ZIPPER VISUALIZATION (Complex Path) ---
-            // Texture
+            // --- ZIPPER VISUALIZATION (Symétrique) ---
             const cvs = document.createElement('canvas'); cvs.width = 64; cvs.height = 64;
             const ctx = cvs.getContext('2d');
             ctx.fillStyle = '#fff'; ctx.fillRect(0,0,64,64);
@@ -365,41 +361,34 @@
             zipTex.wrapS = THREE.RepeatWrapping; zipTex.wrapT = THREE.RepeatWrapping;
             const zipMat = new THREE.MeshBasicMaterial({ map: zipTex, side: THREE.DoubleSide, transparent:true, opacity:0.9 });
 
-            // 1. Côté Gauche (Monte)
-            // Position : x = -lTop/2, z = 0 (centre largeur), y = de -hHalf à -hHalf + drawLeft
-            if (drawLeft > 0.1) {
-                const hGeo = new THREE.PlaneGeometry(zW, drawLeft);
-                const hMesh = new THREE.Mesh(hGeo, zipMat);
-                hMesh.rotation.y = -Math.PI / 2; // Face X
-                // Centre du segment
-                const yPos = -hHalf + (drawLeft / 2);
-                hMesh.position.set(-lTop/2 - 0.05, yPos, 0);
-                bagGroup.add(hMesh);
-            }
-
-            // 2. Dessus (Traverse)
-            // Position : y = hHalf, z = 0, x = de -lTop/2 à -lTop/2 + drawTop
-            if (drawTop > 0.1) {
-                const tGeo = new THREE.PlaneGeometry(drawTop, zW);
+            // 1. Partie Top (Centrée)
+            // Position : y = y + epsilon
+            if (zipTopLen > 0.1) {
+                const tGeo = new THREE.PlaneGeometry(zipTopLen, zW);
                 const tMesh = new THREE.Mesh(tGeo, zipMat);
-                tMesh.rotation.x = -Math.PI / 2; // Face Y
-                const xPos = -lTop/2 + (drawTop / 2);
-                tMesh.position.set(xPos, hHalf + 0.05, 0);
+                tMesh.rotation.x = -Math.PI / 2; // A plat
+                tMesh.position.set(0, y + 0.05, 0); // Centré
                 bagGroup.add(tMesh);
             }
 
-            // 3. Côté Droit (Descend)
-            // Position : x = lTop/2, z=0, y = de hHalf à hHalf - drawRight
-            if (drawRight > 0.1) {
-                const rGeo = new THREE.PlaneGeometry(zW, drawRight);
-                const rMesh = new THREE.Mesh(rGeo, zipMat);
+            // 2. Descentes Latérales (Symétriques)
+            if (sideDrop > 0.1) {
+                const sideGeo = new THREE.PlaneGeometry(zW, sideDrop);
+                
+                // Gauche
+                const lMesh = new THREE.Mesh(sideGeo, zipMat);
+                lMesh.rotation.y = -Math.PI / 2;
+                lMesh.position.set(-x - 0.05, y - (sideDrop/2), 0);
+                bagGroup.add(lMesh);
+
+                // Droite
+                const rMesh = new THREE.Mesh(sideGeo, zipMat);
                 rMesh.rotation.y = Math.PI / 2;
-                const yPos = hHalf - (drawRight / 2);
-                rMesh.position.set(lTop/2 + 0.05, yPos, 0);
+                rMesh.position.set(x + 0.05, y - (sideDrop/2), 0);
                 bagGroup.add(rMesh);
             }
 
-            const volL = ((lTop * w * h) / 1000).toFixed(2);
+            const volL = ((width3D * height3D * depth3D) / 1000).toFixed(2);
             document.getElementById('volume-display').innerText = `Volume approx: ${volL}L`;
         }
 
@@ -421,162 +410,109 @@
         window.onclick = e => { if(e.target == modal) closeModal(); }
 
         function drawPattern2D() {
-            const { lTop, h, w, zipPercent, construction } = getInputs();
+            const { lMain, notchH, midH } = getInputs();
             const scale = 20; 
             const p = 50; 
 
-            // LOGIQUE DE FORME EN "U" (Côté)
-            // Une trousse boxy classique se fait en découpant les coins (encoches).
-            // Pour avoir le zip qui descend sur les côtés, le patron doit avoir 
-            // la partie centrale (hauteur du sac) plus étroite que le haut et le bas.
-            // Cela crée deux bras horizontaux et une partie verticale en retrait.
+            // LOGIQUE EXACTE DE L'IMAGE
+            // Forme globale : Rectangle avec renfoncement
+            // Bottom Width = lMain (4.4)
+            // Top Width = lMain - notchH (2.8 = 4.4 - 1.6? Non, l'image montre 2.8 et 4.4, diff = 1.6).
+            // Donc Top Width = lMain - (notchH * 2) ? 
+            // Si notchH = 0.8. lMain = 4.4. Top = 4.4 - 1.6 = 2.8. C'est exact.
             
-            // Dimensions
-            // Soufflet (Depth) = w
-            // L'encoche (Notch) est généralement w/2.
-            const notchSize = w / 2;
+            const bottomW = lMain * scale;
+            const topW = (lMain - (notchH * 2)) * scale; // La barre du haut est plus courte de 2x la profondeur
+            const armH = notchH * scale; // Hauteur des barres (0.8)
+            const middleH = midH * scale; // Hauteur du vide (2.2)
+            const totalH = armH + middleH + armH; // (3.8)
             
-            // Largeur Totale du patron (à plat) = lTop/2 + notchSize
-            // Hauteur Totale du patron = h + w (h + 2*notchSize)
+            // Le renfoncement (Recess) commence à la fin de topW.
             
-            // Calcul des points (Origine = Pli en haut à gauche pour simplifier, on décale tout)
-            const fullW = (lTop / 2) + notchSize;
-            const fullH = h + w; // w/2 en haut + h milieu + w/2 en bas
-            
-            // Ajustement canvas
-            cvsPattern.width = fullW * scale + (p * 3);
-            cvsPattern.height = fullH * scale + (p * 2);
+            cvsPattern.width = bottomW + (p * 3);
+            cvsPattern.height = totalH + (p * 2);
             ctx2d.clearRect(0,0, cvsPattern.width, cvsPattern.height);
             ctx2d.fillStyle = "#fff"; ctx2d.fillRect(0,0,cvsPattern.width, cvsPattern.height);
             
             const x0 = p;
             const y0 = p;
             
-            // --- COORDONNÉES DU POLYGONE EN "U" (ou C carré) ---
-            // On part du Pli (à gauche)
-            
-            // Point 1 : Coin Haut Gauche (Pli)
-            const p1 = { x: x0, y: y0 };
-            
-            // Point 2 : Bout du bras Haut (Zip)
-            // Longueur bras haut = lTop/2 + notchSize. 
-            // *Note*: L'utilisateur veut des barres pas de la même longueur.
-            // Techniquement, si le zip ne va pas au bout, le tissu s'arrête. 
-            // Mais pour une box pouch, les coins doivent s'aligner.
-            // On va dessiner la forme standard "coupée" aux coins.
-            
-            // Largeur "corps" (centre) = lTop / 2
-            const bodyW = (lTop / 2) * scale;
-            const notchS = notchSize * scale;
-            const hMid = h * scale;
-
-            // Définition de la forme
-            // Haut: Rectangle plein largeur total (lTop/2 + notch) ?? 
-            // Non, encoche = on retire de la matière.
-            // Rectangle de base : (lTop/2 + notch) x (h + 2*notch).
-            // On retire le coin Haut-Droit et Bas-Droit ? 
-            // NON, le zip est sur la longueur. L'encoche sert à former le côté.
-            // Forme :
-            //   _____________________ (Haut)
-            //  |                     |
-            //  |      _______________| (Décrochement Intérieur Haut)
-            //  |     |
-            //  |     |  <-- Côté vertical (Hauteur h)
-            //  |     |_______________
-            //  |                     | (Décrochement Intérieur Bas)
-            //  |_____________________| (Bas)
-            
-            // C'est ça la forme en "U" sur le côté.
-            
-            // Coordonnées :
+            // --- DESSIN DU POLYGONE (Sens horaire) ---
             ctx2d.beginPath();
             ctx2d.lineWidth = 3;
             ctx2d.strokeStyle = "#333";
             
-            // 1. Départ Haut Gauche (Pli)
+            // 1. Pli (Haut Gauche)
             ctx2d.moveTo(x0, y0);
             
-            // 2. Ligne vers droite (Bras Haut)
-            // Longueur = largeur du demi-sac + la profondeur/2 pour le rabat
-            const armTopLen = bodyW + notchS; 
-            ctx2d.lineTo(x0 + armTopLen, y0);
+            // 2. Bras Haut (Court)
+            ctx2d.lineTo(x0 + topW, y0);
             
-            // 3. Descente encoche haut (profondeur du demi-soufflet)
-            ctx2d.lineTo(x0 + armTopLen, y0 + notchS);
+            // 3. Descente Notch Haut
+            ctx2d.lineTo(x0 + topW, y0 + armH);
             
-            // 4. Retrait vers gauche (l'encoche)
-            ctx2d.lineTo(x0 + bodyW, y0 + notchS);
+            // 4. Renfoncement (Verticale intérieure)
+            // Dans votre image, la ligne verticale relie le bout du bras haut au bras bas ?
+            // L'image a Top=2.8 et Bot=4.4. 
+            // Donc la verticale part de X=2.8. Mais où va-t-elle ? 
+            // Ah, l'image a une forme de "L" inversé ou "C" asymétrique.
+            // Le bras du bas va plus loin.
+            // Donc la ligne descend tout droit jusqu'au niveau du bras du bas ? 
+            // Si c'était le cas, le bras du bas commencerait à X=2.8.
+            // Mais le bras du bas va jusqu'à 4.4. 
+            // Donc le renfoncement est défini par cette ligne verticale.
             
-            // 5. Descente verticale (Hauteur du sac)
-            ctx2d.lineTo(x0 + bodyW, y0 + notchS + hMid);
+            ctx2d.lineTo(x0 + topW, y0 + armH + middleH);
             
-            // 6. Sortie vers droite (Bras Bas)
-            ctx2d.lineTo(x0 + armTopLen, y0 + notchS + hMid);
+            // 5. Bras Bas (Retour vers la droite pour aller jusqu'au bout)
+            ctx2d.lineTo(x0 + bottomW, y0 + armH + middleH);
             
-            // 7. Descente encoche bas
-            ctx2d.lineTo(x0 + armTopLen, y0 + notchS + hMid + notchS);
+            // 6. Descente fin bras bas
+            ctx2d.lineTo(x0 + bottomW, y0 + armH + middleH + armH);
             
-            // 8. Retour gauche (Fond)
-            ctx2d.lineTo(x0, y0 + notchS + hMid + notchS);
+            // 7. Retour Gauche (Fond complet)
+            ctx2d.lineTo(x0, y0 + totalH);
             
-            // 9. Remontée (Pli)
+            // 8. Remontée Pli
             ctx2d.lineTo(x0, y0);
             
             ctx2d.stroke();
             
-            // --- VISUALISATION ZIP ---
-            // L'utilisateur veut voir le zip "100% sur les 3 faces".
-            // Sur ce patron 2D, le zip se coud sur le bord supérieur du "Bras Haut" (Segment 1-2)
-            // ET descend le long de la hauteur ?? 
-            // Dans ce type de montage (Box Pouch), le zip est cousu à plat entre les deux panneaux principaux.
-            // Si le zip descend sur les côtés, c'est que l'ouverture s'étend.
-            // On va dessiner une zone hachurée sur le bord supérieur qui représente l'emplacement du zip.
+            // --- ZONE GRISE (VIDE) ---
+            // Pour faire comme l'image, on peut colorier le rectangle manquant en gris clair
+            ctx2d.fillStyle = "#eee";
+            ctx2d.fillRect(x0 + topW, y0, (bottomW - topW), armH + middleH); 
+            // Note: ci-dessus remplit le carré manquant, mais l'image a le fond gris sur la droite.
+            // On laisse simple.
+
+            // --- FLÈCHES ET COTES (Style Image) ---
             
-            // Logique 0-100% sur le dessin 2D :
-            // 100% veut dire que la ligne de zip va faire tout le tour du "U" supérieur ? 
-            // Non, géométriquement impossible sur un patron à plat sauf zip courbe.
-            // Interprétation : Le zip est posé sur le segment du haut. 
-            // Les "oreilles" (extensions) permettent au zip de pendre sur les côtés une fois assemblé.
+            // Top Width (2.8)
+            drawArrow(ctx2d, x0, y0 - 15, x0 + topW, y0 - 15, `${(lMain - (notchH*2)).toFixed(1)}`);
             
-            ctx2d.fillStyle = "rgba(0,0,0,0.1)";
-            ctx2d.fillRect(x0, y0, armTopLen, 10); // Zone de couture zip
+            // Bottom Width (4.4)
+            drawArrow(ctx2d, x0, y0 + totalH + 15, x0 + bottomW, y0 + totalH + 15, `${lMain.toFixed(1)}`);
             
-            // Annotations Dimensions
-            ctx2d.fillStyle = "#333";
-            ctx2d.font = "14px Inter";
+            // Left Height (3.8)
+            drawArrow(ctx2d, x0 - 15, y0, x0 - 15, y0 + totalH, `${(midH + notchH*2).toFixed(1)}`);
             
-            // Fleche Hauteur Corps
-            drawArrow(ctx2d, x0 + bodyW - 10, y0 + notchS, x0 + bodyW - 10, y0 + notchS + hMid, `${h} cm`);
+            // Top Notch H (0.8)
+            drawArrow(ctx2d, x0 + topW + 15, y0, x0 + topW + 15, y0 + armH, `${notchH.toFixed(1)}`);
             
-            // Fleche Bras Haut (Longueur + Rabat)
-            drawArrow(ctx2d, x0, y0 - 15, x0 + armTopLen, y0 - 15, `${(lTop/2 + notchSize).toFixed(1)} cm`);
+            // Middle Gap (2.2) -> Pointillés
+            drawDashedLine(ctx2d, x0, y0 + armH, x0 + topW, y0 + armH);
+            drawDashedLine(ctx2d, x0, y0 + armH + middleH, x0 + topW, y0 + armH + middleH);
             
-            // Fleche Encoche (Profondeur)
-            drawArrow(ctx2d, x0 + armTopLen + 15, y0, x0 + armTopLen + 15, y0 + notchS, `${(w/2).toFixed(1)}`);
-            
+            // Cote milieu
+            ctx2d.fillStyle = "#000"; ctx2d.textAlign = "center";
+            ctx2d.fillText(`${midH.toFixed(1)}`, x0 + (topW/2), y0 + armH + (middleH/2));
+
             // Texte "Pli"
             ctx2d.save();
-            ctx2d.translate(x0 - 15, y0 + (fullH*scale)/2);
+            ctx2d.translate(x0 - 30, y0 + (totalH/2));
             ctx2d.rotate(-Math.PI/2);
-            ctx2d.textAlign = "center";
             ctx2d.fillText("PLI DU TISSU", 0, 0);
             ctx2d.restore();
-            
-            // Pointillés de couture aux coins internes
-            ctx2d.setLineDash([5, 5]);
-            ctx2d.beginPath();
-            // Ligne de pliage virtuel du coin haut
-            ctx2d.moveTo(x0 + bodyW, y0);
-            ctx2d.lineTo(x0 + bodyW, y0 + notchS);
-            // Ligne de pliage virtuel du coin bas
-            ctx2d.moveTo(x0 + bodyW, y0 + notchS + hMid);
-            ctx2d.lineTo(x0 + bodyW, y0 + notchS + hMid + notchS);
-            ctx2d.stroke();
-            
-            // Indication "Barres inégales"
-            // Si l'utilisateur veut que le bas soit plus long que le haut, 
-            // c'est souvent pour que le rabat du bas recouvre celui du haut.
-            // Ici le dessin est symétrique par défaut (standard), mais la forme en U est bien là.
         }
 
         function drawArrow(ctx, x1, y1, x2, y2, text) {
@@ -596,9 +532,15 @@
             ctx.fillText(text, mx, my);
         }
 
+        function drawDashedLine(ctx, x1, y1, x2, y2) {
+            ctx.setLineDash([3, 3]);
+            ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
         function downloadPattern() {
             const link = document.createElement('a');
-            link.download = 'patron-boxy-U.png';
+            link.download = 'patron-boxy-asym.png';
             link.href = cvsPattern.toDataURL();
             link.click();
         }
