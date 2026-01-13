@@ -207,7 +207,8 @@
     <div class="main-app">
         <div class="viewer-3d" id="scene-container">
             <div style="position: absolute; top: 20px; width: 100%; text-align: center; color: #999; pointer-events: none;">
-                360° Aperçu <br> ↻
+                360° Aperçu 
+ ↻
             </div>
             <div style="position: absolute; bottom: 20px; width: 100%; text-align: center; font-family: monospace;" id="volume-display">
                 Volume: 0.0L
@@ -263,12 +264,12 @@
                 <input type="number" id="zipWidth" value="3" step="0.1" min="0.5">
             </div>
 
-            <div class="control-group">
-                <label>Extension Zip <i class="info-icon" data-tooltip="Contrôle l'ouverture : part du centre, s'élargit, puis descend sur les côtés">i</i></label>
+            <div class="control-group" style="opacity: 0.5; pointer-events: none;">
+                 <label>Extension Zip (Désactivé pour ce style de patron)</label>
                 <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #888; margin-bottom: 5px;">
                     <span>Petit (Centre)</span><span>Grand (Max)</span>
                 </div>
-                <input type="range" id="zipExtension" min="0" max="100" value="70">
+                <input type="range" id="zipExtension" min="0" max="100" value="70" disabled>
             </div>
 
             <button class="btn-generate" onclick="openModal()">Générer le patron !</button>
@@ -484,8 +485,7 @@
             const width = container.clientWidth;
             const height = container.clientHeight;
             renderer.setSize(width, height);
-            camera.aspect = width / height;
-            camera.updateProjectionMatrix();
+            camera.aspect = width / height;<br>            camera.updateProjectionMatrix();
         });
 
         // --- MODAL & 2D PATTERN ---
@@ -497,79 +497,125 @@
         function closeModal() { modal.style.display = 'none'; }
         window.onclick = function(event) { if (event.target == modal) closeModal(); }
 
+        // --- FONCTION CORRIGÉE POUR LE PATRON 2D ---
         function drawPattern2D() {
-            const { lTop, h, w, seam, zW, zipTopLen, zipSideDrop } = getInputs();
+            // On récupère les dimensions
+            const { lTop, h, w, seam, zW } = getInputs();
 
             ctx2d.clearRect(0, 0, cvs.width, cvs.height);
             ctx2d.fillStyle = "#fff"; ctx2d.fillRect(0,0, cvs.width, cvs.height);
             
+            // Configuration de l'échelle et du padding
             const scale = 15; const padX = 60; const padY = 60;
             const totalH = h + w/2 + seam*2; const totalW = lTop/2 + seam*2;
-            const drawH = totalH * scale; const drawW = totalW * scale; const sScale = seam * scale;
-            const x = padX; const y = padY;
+            const drawH = totalH * scale; const drawW = totalW * scale;
             
-            // Marge
-            ctx2d.strokeStyle = "rgba(74, 144, 226, 0.5)"; ctx2d.lineWidth = 1; ctx2d.setLineDash([5, 3]);
-            ctx2d.beginPath(); ctx2d.moveTo(x, y); ctx2d.lineTo(x + drawW, y); ctx2d.lineTo(x + drawW, y + (h+seam)*scale);
-            ctx2d.lineTo(x + drawW + (w/2)*scale, y + (h+seam)*scale); ctx2d.lineTo(x + drawW + (w/2)*scale, y + drawH);
-            ctx2d.lineTo(x, y + drawH); ctx2d.closePath(); ctx2d.stroke(); ctx2d.setLineDash([]);
+            // Conversion des mesures clés en pixels
+            const sScale = seam * scale; // La marge en pixels
+            // --- CORRECTION : Taille de l'encoche du haut ---
+            // On utilise la taille de la marge pour définir la profondeur et la largeur du décrochement du haut
+            const notchSize = sScale; 
 
-            // Coupe
+            const x = padX; const y = padY; // Point origine (haut-gauche de la zone de dessin)
+            
+            // --- 1. Dessin de la Marge (Ligne pointillée extérieure) ---
+            ctx2d.strokeStyle = "rgba(74, 144, 226, 0.5)"; ctx2d.lineWidth = 1; ctx2d.setLineDash([5, 3]);
+            ctx2d.beginPath(); 
+            ctx2d.moveTo(x, y); // Haut-gauche
+            ctx2d.lineTo(x + drawW, y); // Haut-droite
+            ctx2d.lineTo(x + drawW, y + (h+seam)*scale); // Bas-droite (avant le coin)
+            ctx2d.lineTo(x + drawW + (w/2)*scale, y + (h+seam)*scale); // Coin extérieur bas
+            ctx2d.lineTo(x + drawW + (w/2)*scale, y + drawH); // Tout en bas à droite
+            ctx2d.lineTo(x, y + drawH); // Tout en bas à gauche (pli)
+            ctx2d.closePath(); ctx2d.stroke(); ctx2d.setLineDash([]);
+
+            // --- 2. Dessin de la Coupe (Ligne pleine intérieure - CORRIGÉE) ---
             ctx2d.strokeStyle = "#333"; ctx2d.lineWidth = 2; ctx2d.beginPath();
-            const xi = x + sScale; const yi = y + sScale;
-            const dWi = (lTop/2)*scale; const dHi = (h + w/2)*scale;
-            ctx2d.moveTo(xi, yi); ctx2d.lineTo(xi + dWi, yi); ctx2d.lineTo(xi + dWi, yi + h*scale);
-            ctx2d.lineTo(xi + dWi + (w/2)*scale, yi + h*scale); ctx2d.lineTo(xi + dWi + (w/2)*scale, yi + dHi);
-            ctx2d.lineTo(xi, yi + dHi); ctx2d.closePath(); ctx2d.stroke();
+            
+            // Points de départ intérieurs (après la marge)
+            const xi = x + sScale; 
+            const yi = y + sScale;
+            
+            // Dimensions intérieures
+            const dWi = (lTop/2)*scale; // Largeur du demi-panneau
+            const dHi = (h + w/2)*scale; // Hauteur totale
+            const boxDepth = (w/2)*scale; // Profondeur de la découpe du fond
+
+            // a. Point de départ sur le pli (haut-gauche)
+            ctx2d.moveTo(xi, yi); 
+            
+            // --- CORRECTION DU TRACÉ DU HAUT POUR INCLURE L'ENCOCHE ---
+            // b. Ligne du haut : on s'arrête avant la fin pour créer l'encoche
+            ctx2d.lineTo(xi + dWi - notchSize, yi); 
+            
+            // c. Descente de l'encoche (verticale)
+            ctx2d.lineTo(xi + dWi - notchSize, yi + notchSize);
+            
+            // d. Fin de l'encoche (horizontale vers l'extérieur)
+            ctx2d.lineTo(xi + dWi, yi + notchSize);
+            // ---------------------------------------------------------
+
+            // e. Descente latérale jusqu'au début du coin inférieur
+            ctx2d.lineTo(xi + dWi, yi + h*scale);
+            
+            // f. Coin inférieur (partie horizontale)
+            ctx2d.lineTo(xi + dWi + boxDepth, yi + h*scale);
+            
+            // g. Coin inférieur (partie verticale jusqu'en bas)
+            ctx2d.lineTo(xi + dWi + boxDepth, yi + dHi);
+            
+            // h. Retour au pli (en bas)
+            ctx2d.lineTo(xi, yi + dHi);
+            
+            ctx2d.closePath(); ctx2d.stroke();
             ctx2d.fillStyle = "rgba(0,0,0,0.05)"; ctx2d.fill();
 
-            // Zip 2D
+            // --- 3. Visualisation Zone Zip (Gris clair) ---
+            // On dessine la zone du zip sur la partie supérieure, avant l'encoche
             const zScale = zW * scale;
-            ctx2d.fillStyle = "rgba(100, 100, 100, 0.2)";
+            ctx2d.fillStyle = "rgba(100, 100, 100, 0.15)";
+            // La bande s'arrête au début de l'encoche
+            ctx2d.fillRect(xi, yi, dWi - notchSize, notchSize);
+
+
+            // --- 4. Annotations ---
+            ctx2d.fillStyle = "#000"; ctx2d.font = "12px Inter"; 
             
-            // Longueur dessinée sur le dessus (moitié de la longueur totale du zip, car on dessine un quart de patron)
-            const drawnZipTopLen = (zipTopLen / 2) * scale;
+            // Annotation Haut (ajustée pour être au milieu de la partie droite)
+            ctx2d.textAlign = "center";
+            ctx2d.fillText(`${(lTop/2).toFixed(1)}`, xi + (dWi - notchSize)/2, y - 10);
 
-            if(drawnZipTopLen > 0) {
-                // Bande horizontale
-                ctx2d.fillRect(xi, yi - zScale/2, drawnZipTopLen, zScale/2);
-            }
+            // Annotation Côté
+            ctx2d.textAlign = "right"; 
+            ctx2d.fillText(`${(h + w/2).toFixed(1)}`, x - 10, yi + dHi/2);
             
-            const drawnZipSideDrop = zipSideDrop * scale;
-            if(drawnZipSideDrop > 0) {
-                // Bande verticale (si le zip est arrivé au bout, drawnZipTopLen == dWi)
-                // On positionne la descente exactement à l'angle
-                ctx2d.fillRect(xi + dWi - zScale/2, yi, zScale/2, drawnZipSideDrop);
+            // Annotation Bas
+            ctx2d.textAlign = "center"; 
+            ctx2d.fillText(`${(w/2).toFixed(1)}`, xi + dWi + boxDepth/2, y + drawH + 15);
+            
+            if(seam > 0) { 
+                ctx2d.fillStyle = "rgba(74, 144, 226, 1)"; 
+                ctx2d.fillText(`Marge incluse: ${seam}cm`, x + drawW/2, y + drawH + 35); 
             }
 
-            // Annotations
-            ctx2d.fillStyle = "#000"; ctx2d.font = "12px Inter"; ctx2d.textAlign = "center";
-            ctx2d.fillText(`${(lTop/2 + seam).toFixed(1)}`, xi + dWi/2, y - 10);
-            ctx2d.textAlign = "right"; ctx2d.fillText(`${(h + w/2 + seam).toFixed(1)}`, x - 10, yi + dHi/2);
-            ctx2d.textAlign = "center"; ctx2d.fillText(`${(w/2 + seam).toFixed(1)}`, xi + dWi + (w/2*scale)/2, y + drawH + 15);
-            if(seam > 0) { ctx2d.fillStyle = "rgba(74, 144, 226, 1)"; ctx2d.fillText(`Marge: ${seam}cm`, x + drawW/2, y + drawH + 35); }
+            // --- 5. Point "Arrêt Zip" (CORRIGÉ) ---
+            // Pour correspondre au style de l'image 1, l'arrêt du zip se situe
+            // exactement dans le coin intérieur de l'encoche que nous venons de créer.
+            ctx2d.fillStyle = "blue";
+            ctx2d.beginPath();
+            
+            // Coordonnées du coin intérieur de l'encoche
+            let dotX = xi + dWi - notchSize;
+            let dotY = yi + notchSize;
 
-            // Point "Arrêt Zip"
-            if (zipTopLen > 0) {
-                 ctx2d.fillStyle = "blue";
-                 ctx2d.beginPath();
-                 let dotX = xi + drawnZipTopLen;
-                 let dotY = yi;
-                 
-                 // Si on descend, le point Y change
-                 if (drawnZipSideDrop > 0) {
-                     dotX = xi + dWi; // Coin
-                     dotY = yi + drawnZipSideDrop;
-                 } else {
-                     // Si on est sur le dessus, le Y est au centre du zip
-                     // (mais pour le dessin technique, on le met souvent sur la ligne de couture)
-                     dotY = yi; 
-                 }
-
+            // On dessine le point seulement si la largeur est suffisante
+            if (dWi > notchSize) {
                  ctx2d.arc(dotX, dotY, 3, 0, 2*Math.PI);
                  ctx2d.fill();
                  ctx2d.textAlign = "left";
-                 ctx2d.fillText("Arrêt Zip", dotX + 5, dotY + 4);
+                 ctx2d.font = "bold 12px Inter";
+                 // Positionner le texte "Arrêt Zip" à côté du point
+                 ctx2d.fillText("Arrêt Zip", dotX + 8, dotY + 4);
             }
         }
 
