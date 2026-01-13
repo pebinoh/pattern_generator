@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Générateur de Pattern</title>
+    <title>Générateur de Pattern - Box Pouch</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -15,7 +15,6 @@
             --bg: #ffffff;
             --gray-light: #f5f5f5;
             --border: #ddd;
-            --seam-color: rgba(74, 144, 226, 0.5);
         }
 
         body {
@@ -66,14 +65,11 @@
             box-sizing: border-box;
         }
 
-        /* --- Typography & Elements --- */
+        /* --- UI Elements --- */
         h1 { font-size: 2.5rem; letter-spacing: -1px; margin-bottom: 10px; margin-top: 0; }
         h2 { font-size: 1.2rem; margin-top: 30px; margin-bottom: 10px; }
         p { line-height: 1.6; color: #555; font-size: 0.95rem; }
-        strong { color: #000; }
-        a { color: var(--primary); text-decoration: underline; cursor: pointer; }
-
-        /* --- Form Elements --- */
+        
         .control-group { margin-bottom: 15px; }
         .control-group label {
             display: flex;
@@ -82,9 +78,6 @@
             font-size: 0.9rem;
             margin-bottom: 5px;
         }
-
-        .input-row { display: flex; gap: 10px; }
-        .input-wrapper { flex: 1; }
         
         input[type="number"], select {
             width: 100%;
@@ -97,96 +90,47 @@
 
         input[type="range"] { width: 100%; cursor: pointer; }
 
-        /* --- Tooltip --- */
         .info-icon {
-            display: inline-flex;
-            justify-content: center;
-            align-items: center;
-            width: 16px;
-            height: 16px;
-            background: #eee;
-            color: #666;
-            border-radius: 50%;
-            font-size: 10px;
-            margin-left: 8px;
-            cursor: help;
-            position: relative;
-            font-style: normal;
-            font-weight: bold;
+            display: inline-flex; justify-content: center; align-items: center;
+            width: 16px; height: 16px; background: #eee; color: #666;
+            border-radius: 50%; font-size: 10px; margin-left: 8px; cursor: help;
+            position: relative; font-weight: bold; font-style: normal;
         }
-
         .info-icon:hover::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: 25px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #333;
-            color: #fff;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            white-space: nowrap;
-            z-index: 100;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            content: attr(data-tooltip); position: absolute; bottom: 25px; left: 50%;
+            transform: translateX(-50%); background: #333; color: #fff; padding: 8px 12px;
+            border-radius: 4px; font-size: 0.8rem; white-space: nowrap; z-index: 100;
         }
 
-        /* --- Button --- */
         .btn-generate {
-            background: linear-gradient(to bottom, #333, #000);
-            color: white;
-            border: none;
-            padding: 15px;
-            width: 100%;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            border-radius: 6px;
-            transition: all 0.2s;
-            margin-top: auto;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            background: linear-gradient(to bottom, #333, #000); color: white; border: none;
+            padding: 15px; width: 100%; font-weight: 600; font-size: 1rem; cursor: pointer;
+            border-radius: 6px; margin-top: auto;
         }
-        .btn-generate:hover { background: #555; transform: translateY(-1px); }
+        .btn-generate:hover { background: #555; }
 
         /* --- MODAL --- */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            display: none; justify-content: center; align-items: center;
-            z-index: 1000;
-            backdrop-filter: blur(2px);
+            background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center;
+            z-index: 1000; backdrop-filter: blur(2px);
         }
         .modal {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            width: auto;
-            max-width: 90%;
-            max-height: 90vh;
-            text-align: center;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            position: relative;
-            overflow-y: auto;
+            background: white; padding: 30px; border-radius: 8px;
+            width: auto; max-width: 90%; max-height: 90vh; text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative; overflow-y: auto;
         }
-        .modal h2 { margin-top: 0; }
         .close-modal {
             position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #999;
         }
-        .close-modal:hover { color: #333; }
-
         canvas {
-            border: 1px solid #eee;
-            margin: 20px auto;
-            max-width: 100%;
-            display: block;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border: 1px solid #eee; margin: 20px auto; max-width: 100%; display: block;
         }
         .btn-download {
-            background: #333; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-size: 1rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+            background: #333; color: white; border: none; padding: 12px 20px;
+            border-radius: 6px; font-size: 1rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
         }
-        .btn-download:hover { background: #555; }
-
-        /* Responsive */
+        
         @media (max-width: 900px) {
             body { flex-direction: column; overflow: auto; height: auto; }
             .sidebar, .main-app { width: 100%; }
@@ -199,24 +143,21 @@
 <body>
 
     <div class="sidebar">
-        <h1>Générateur de pattern</h1>
+        <h1>Générateur de Pattern</h1>
+        <p>Créez votre patron de trousse ou sac "Boxy".</p>
+        <h2>Nouveautés</h2>
         <p>
-            Cet outil vous permet de créer un patron de couture simple pour une pochette/sac avec fermeture éclair sur le dessus.
-            Personnalisez-le en ajoutant des onglets, poches, poignées ou étiquettes pour en faire votre propre création.
-        </p>
-        <h2>Comment ça marche ?</h2>
-        <p>
-            Configurer un projet avec ce générateur est simple et rapide. Visualisez le rendu en 3D à droite et ajustez les dimensions.
+            <strong>Zip complet :</strong> Le curseur d'extension contrôle désormais le zip sur les 3 côtés (côté gauche, dessus, côté droit).
         </p>
         <p>
-            L'aperçu en fil de fer (wireframe) vous montre la structure exacte. La bande hachurée représente la fermeture éclair, et les lignes bleues indiquent la marge de couture.
+            <strong>Forme en U :</strong> Le patron généré comporte maintenant deux décrochements (haut et bas) pour former les soufflets, créant une forme en "U" couché (ou C) prête à coudre.
         </p>
     </div>
 
     <div class="main-app">
         <div class="viewer-3d" id="scene-container">
-            <div style="position: absolute; top: 20px; width: 100%; text-align: center; color: #999; pointer-events: none; user-select: none;">
-                360° Aperçu <br> (Cliquez et glissez pour tourner)
+            <div style="position: absolute; top: 20px; width: 100%; text-align: center; color: #999; pointer-events: none;">
+                360° Aperçu
             </div>
             <div style="position: absolute; bottom: 20px; width: 100%; text-align: center; font-family: monospace; pointer-events: none;" id="volume-display">
                 Volume: 0.0L
@@ -224,14 +165,13 @@
         </div>
 
         <div class="controls-panel">
-            
             <div class="control-group" style="display: flex; align-items: center; gap: 10px;">
                 <label style="margin-bottom: 0;">Unité :</label>
                 <span style="font-weight: 600; background: #eee; padding: 5px 10px; border-radius: 4px;">cm</span>
             </div>
 
             <div class="control-group">
-                <label>Construction <i class="info-icon" data-tooltip="Type de structure (1 pièce pliée ou 2 panneaux cousus)">i</i></label>
+                <label>Construction</label>
                 <select id="construction">
                     <option value="1">1 Panneau (Pli au fond)</option>
                     <option value="2">2 Panneaux (Couture au fond)</option>
@@ -239,44 +179,39 @@
             </div>
 
             <div class="control-group">
-                <label>Longueur Totale (ex: 4.4)</label>
-                <div class="input-row">
-                    <div class="input-wrapper">
-                        <input type="number" id="lenTop" value="11.2" step="0.1" min="1">
-                    </div>
-                    <input type="hidden" id="lenBot" value="11.2">
-                </div>
+                <label>Longueur (Top) <i class="info-icon" data-tooltip="Longueur horizontale du haut">i</i></label>
+                <input type="number" id="lenTop" value="20" step="0.5" min="5">
             </div>
 
             <div class="control-group">
-                <label>Largeur/Prof. (ex: 2.2) <i class="info-icon" data-tooltip="Épaisseur de la pochette (soufflet)">i</i></label>
-                <input type="number" id="width" value="5.6" step="0.1" min="1">
+                <label>Profondeur (Soufflet) <i class="info-icon" data-tooltip="Largeur du côté">i</i></label>
+                <input type="number" id="width" value="8" step="0.5" min="2">
             </div>
 
             <div class="control-group">
-                <label>Hauteur (ex: 3.8) <i class="info-icon" data-tooltip="Hauteur verticale finale">i</i></label>
-                <input type="number" id="height" value="9.7" step="0.1" min="1">
+                <label>Hauteur <i class="info-icon" data-tooltip="Hauteur verticale finale">i</i></label>
+                <input type="number" id="height" value="12" step="0.5" min="2">
             </div>
 
             <div class="control-group">
-                <label>Marge de couture <i class="info-icon" data-tooltip="Espace ajouté pour la couture (visualisé en bleu)">i</i></label>
+                <label>Marge de couture</label>
                 <input type="number" id="seam" value="1.0" step="0.1" min="0">
             </div>
 
             <div class="control-group">
-                <label>Largeur Zip (ex: 0.8) <i class="info-icon" data-tooltip="Largeur totale de la bande zip">i</i></label>
-                <input type="number" id="zipWidth" value="2.0" step="0.1" min="0.5">
+                <label>Largeur Zip</label>
+                <input type="number" id="zipWidth" value="3.0" step="0.1" min="0.5">
             </div>
 
             <div class="control-group">
-                 <label>Longueur du Zip (%) <i class="info-icon" data-tooltip="Ajuste la longueur de l'ouverture supérieure">i</i></label>
+                 <label>Extension Zip (0% - 100%) <i class="info-icon" data-tooltip="Contrôle l'ouverture : 0% = rien, 100% = descend jusqu'en bas des côtés">i</i></label>
                 <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #888; margin-bottom: 5px;">
-                    <span>Court</span><span>Long</span>
+                    <span>Rien</span><span>Tout le tour</span>
                 </div>
-                <input type="range" id="zipExtension" min="50" max="100" value="80">
+                <input type="range" id="zipExtension" min="0" max="100" value="85">
             </div>
 
-            <button class="btn-generate" onclick="openModal()">Générer le patron !</button>
+            <button class="btn-generate" onclick="openModal()">Générer le patron (2D)</button>
         </div>
     </div>
 
@@ -284,16 +219,10 @@
         <div class="modal">
             <span class="close-modal" onclick="closeModal()">&times;</span>
             <h2>Patron de découpe</h2>
-            
             <canvas id="patternCanvas"></canvas>
-            
             <button class="btn-download" onclick="downloadPattern()">
                 <span>⬇ Télécharger le patron (PNG)</span>
             </button>
-            
-            <p style="font-size: 0.8rem; color: #888; margin-top: 15px;">
-                Les dimensions incluent la marge de couture. <br>Coupez 2 pièces (ou 1 sur le pli selon construction).
-            </p>
         </div>
     </div>
 
@@ -303,66 +232,73 @@
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xfcfcfc);
 
-        // Caméra
         const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-        camera.position.set(30, 25, 35);
+        camera.position.set(40, 35, 45);
 
-        // Rendu
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
         container.appendChild(renderer.domElement);
 
-        // Contrôles
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-        controls.autoRotate = true;
-        controls.autoRotateSpeed = 1.0;
+        controls.enableDamping = true; controls.autoRotate = true;
 
         const bagGroup = new THREE.Group();
         scene.add(bagGroup);
 
-        // Inputs
+        // Inputs & Logic
         function getInputs() {
-            // Récupération des valeurs
             const lTop = Math.max(0.1, parseFloat(document.getElementById('lenTop').value) || 0);
-            const lBot = lTop; // On simplifie pour que ce soit un rectangle à la base
             const w = Math.max(0.1, parseFloat(document.getElementById('width').value) || 0);
             const h = Math.max(0.1, parseFloat(document.getElementById('height').value) || 0);
             const seam = Math.max(0, parseFloat(document.getElementById('seam').value) || 0);
             const zW = Math.max(0.1, parseFloat(document.getElementById('zipWidth').value) || 0);
             const construction = document.getElementById('construction').value;
-            
-            // Le slider contrôle maintenant le ratio de la longueur du haut
-            const zipExtPercent = parseInt(document.getElementById('zipExtension').value) || 100;
+            const zipPercent = parseInt(document.getElementById('zipExtension').value) || 0;
 
-            // Calculs pour la 3D
-            const totalPath = lTop + (2 * h);
+            // Calcul du trajet total du zip pour la 3D
+            // Trajet : Monter côté gauche (h) + Traverser (lTop) + Descendre côté droit (h)
+            // Note: En 3D on visualise le volume fini. 
+            // Si le sac est une boite, le zip monte sur la tranche verticale ? 
+            // Pour ce type de modèle "Wide Mouth", le zip parcourt le périmètre supérieur.
+            // On va simuler l'ouverture : 
+            // 0 -> lTop (sur le dessus seulement)
+            // > lTop -> descend sur les côtés.
             
-            // Logique Zip 3D simplifiée pour l'affichage
-            // La longueur visuelle du zip sur le modèle 3D
-            const zipLenDisplay = lTop * (zipExtPercent / 100);
+            // Correction demande utilisateur : "0% rien sur le dessus à 100% sur mes 3 faces"
+            // Trajet Total = Hauteur(Gauche) + Longueur(Top) + Hauteur(Droite)
+            const totalZipPath = h + lTop + h;
+            const currentZipDist = totalZipPath * (zipPercent / 100);
 
-            return { lTop, lBot, w, h, seam, zW, construction, zipPercent: zipExtPercent, zipLenDisplay };
+            let drawLeft = 0, drawTop = 0, drawRight = 0;
+
+            if (currentZipDist <= h) {
+                // Seulement en train de monter à gauche (cas rare mais logique 0-100)
+                drawLeft = currentZipDist;
+            } else if (currentZipDist <= (h + lTop)) {
+                // Gauche complète + partie du top
+                drawLeft = h;
+                drawTop = currentZipDist - h;
+            } else {
+                // Gauche complète + Top complet + partie droite
+                drawLeft = h;
+                drawTop = lTop;
+                drawRight = currentZipDist - (h + lTop);
+            }
+
+            return { lTop, w, h, seam, zW, construction, zipPercent, drawLeft, drawTop, drawRight };
         }
 
-        // Utilitaire Ligne
-        function createLine(p1, p2, color, dashed = false, opacity = 1) {
-            const points = [p1, p2];
-            const geometry = new THREE.BufferGeometry().setFromPoints(points);
-            let material;
-            if (dashed) {
-                material = new THREE.LineDashedMaterial({ color: color, linewidth: 1, scale: 1, dashSize: 1, gapSize: 0.5, opacity: opacity, transparent: true });
-            } else {
-                material = new THREE.LineBasicMaterial({ color: color, linewidth: 1, opacity: opacity, transparent: true });
-            }
+        function createLine(p1, p2, color, dashed = false) {
+            const geometry = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+            const material = dashed 
+                ? new THREE.LineDashedMaterial({ color: color, dashSize: 1, gapSize: 0.5 }) 
+                : new THREE.LineBasicMaterial({ color: color });
             const line = new THREE.Line(geometry, material);
-            if (dashed) line.computeLineDistances();
+            if(dashed) line.computeLineDistances();
             return line;
         }
 
-        // --- FONCTION DE DESSIN 3D ---
         function updateGeometry() {
             while(bagGroup.children.length > 0){ 
                 let obj = bagGroup.children[0];
@@ -374,314 +310,296 @@
                 bagGroup.remove(obj); 
             }
 
-            const { lTop, lBot, w, h, seam, zW, construction, zipLenDisplay } = getInputs();
+            const { lTop, w, h, seam, zW, construction, drawLeft, drawTop, drawRight } = getInputs();
             const wHalf = w / 2;
             const hHalf = h / 2;
             
+            // Vertices principaux (Boite)
             const v = {
                 tfl: new THREE.Vector3(-lTop/2, hHalf, wHalf), tfr: new THREE.Vector3(lTop/2, hHalf, wHalf),
                 tbl: new THREE.Vector3(-lTop/2, hHalf, -wHalf), tbr: new THREE.Vector3(lTop/2, hHalf, -wHalf),
-                bfl: new THREE.Vector3(-lBot/2, -hHalf, wHalf), bfr: new THREE.Vector3(lBot/2, -hHalf, wHalf),
-                bbl: new THREE.Vector3(-lBot/2, -hHalf, -wHalf), bbr: new THREE.Vector3(lBot/2, -hHalf, -wHalf)
+                bfl: new THREE.Vector3(-lTop/2, -hHalf, wHalf), bfr: new THREE.Vector3(lTop/2, -hHalf, wHalf),
+                bbl: new THREE.Vector3(-lTop/2, -hHalf, -wHalf), bbr: new THREE.Vector3(lTop/2, -hHalf, -wHalf)
             };
 
-            // --- GHOST ---
+            // Ghost Box
             const boxGeo = new THREE.BoxGeometry(lTop, h, w);
-            const boxMat = new THREE.MeshBasicMaterial({ 
-                color: 0xeeeeee, 
-                transparent: true, 
-                opacity: 0.3, 
-                side: THREE.DoubleSide,
-                depthWrite: false 
-            });
-            const ghostMesh = new THREE.Mesh(boxGeo, boxMat);
-            bagGroup.add(ghostMesh);
+            const boxMat = new THREE.MeshBasicMaterial({ color: 0xeeeeee, transparent: true, opacity: 0.3, depthWrite: false });
+            bagGroup.add(new THREE.Mesh(boxGeo, boxMat));
 
-            // --- WIREFRAME ---
-            const mainColor = 0x333333;
-            bagGroup.add(createLine(v.tfl, v.tfr, mainColor)); bagGroup.add(createLine(v.tfr, v.tbr, mainColor));
-            bagGroup.add(createLine(v.tbr, v.tbl, mainColor)); bagGroup.add(createLine(v.tbl, v.tfl, mainColor));
-            
-            const bottomDashed = construction === "2";
-            bagGroup.add(createLine(v.bfl, v.bfr, mainColor, bottomDashed)); bagGroup.add(createLine(v.bfr, v.bbr, mainColor, bottomDashed));
-            bagGroup.add(createLine(v.bbr, v.bbl, mainColor, bottomDashed)); bagGroup.add(createLine(v.bbl, v.bfl, mainColor, bottomDashed));
-            
-            bagGroup.add(createLine(v.tfl, v.bfl, mainColor)); bagGroup.add(createLine(v.tfr, v.bfr, mainColor));
-            bagGroup.add(createLine(v.tbr, v.bbr, mainColor)); bagGroup.add(createLine(v.tbl, v.bbl, mainColor));
+            // Wireframe
+            const c = 0x333333;
+            // Top rect
+            bagGroup.add(createLine(v.tfl, v.tfr, c)); bagGroup.add(createLine(v.tfr, v.tbr, c));
+            bagGroup.add(createLine(v.tbr, v.tbl, c)); bagGroup.add(createLine(v.tbl, v.tfl, c));
+            // Bottom rect
+            const bDashed = construction === "2"; // Dashed if 2 panels (seam), solid if 1 (fold) ? Actually logic is reverse usually but implies structure.
+            bagGroup.add(createLine(v.bfl, v.bfr, c, bDashed)); bagGroup.add(createLine(v.bfr, v.bbr, c, bDashed));
+            bagGroup.add(createLine(v.bbr, v.bbl, c, bDashed)); bagGroup.add(createLine(v.bbl, v.bfl, c, bDashed));
+            // Verticals
+            bagGroup.add(createLine(v.tfl, v.bfl, c)); bagGroup.add(createLine(v.tfr, v.bfr, c));
+            bagGroup.add(createLine(v.tbr, v.bbr, c)); bagGroup.add(createLine(v.tbl, v.bbl, c));
 
-            // --- MARGE ---
+            // Marge de couture (Bleu)
             if (seam > 0) {
-                const seamColor = 0x4a90e2; const seamOpacity = 0.5;
+                const sC = 0x4a90e2; 
+                const s = seam;
+                // Calcul simple d'une boite englobante pour la marge
                 const vs = {
-                    tfl: new THREE.Vector3(-lTop/2 - seam, hHalf + seam, wHalf + seam), tfr: new THREE.Vector3(lTop/2 + seam, hHalf + seam, wHalf + seam),
-                    tbl: new THREE.Vector3(-lTop/2 - seam, hHalf + seam, -wHalf - seam), tbr: new THREE.Vector3(lTop/2 + seam, hHalf + seam, -wHalf - seam),
-                    bfl: new THREE.Vector3(-lBot/2 - seam, -hHalf - seam, wHalf + seam), bfr: new THREE.Vector3(lBot/2 + seam, -hHalf - seam, wHalf + seam),
-                    bbl: new THREE.Vector3(-lBot/2 - seam, -hHalf - seam, -wHalf - seam), bbr: new THREE.Vector3(lBot/2 + seam, -hHalf - seam, -wHalf - seam)
+                    tfl: new THREE.Vector3(-lTop/2-s, hHalf+s, wHalf+s), tfr: new THREE.Vector3(lTop/2+s, hHalf+s, wHalf+s),
+                    bbr: new THREE.Vector3(lTop/2+s, -hHalf-s, -wHalf-s), bbl: new THREE.Vector3(-lTop/2-s, -hHalf-s, -wHalf-s)
                 };
-                const edges = [
-                    [vs.tfl, vs.tfr], [vs.tfr, vs.tbr], [vs.tbr, vs.tbl], [vs.tbl, vs.tfl],
-                    [vs.bfl, vs.bfr], [vs.bfr, vs.bbr], [vs.bbr, vs.bbl], [vs.bbl, vs.bfl],
-                    [vs.tfl, vs.bfl], [vs.tfr, vs.bfr], [vs.tbr, vs.bbr], [vs.tbl, vs.bbl]
-                ];
-                edges.forEach(e => bagGroup.add(createLine(e[0], e[1], seamColor, false, seamOpacity)));
+                // Juste quelques lignes pour visualiser l'idée
+                bagGroup.add(createLine(vs.tfl, vs.tfr, sC, true));
+                bagGroup.add(createLine(vs.bbl, vs.bbr, sC, true));
             }
 
-            // --- ZIPPER ---
-            const canvas = document.createElement('canvas');
-            canvas.width = 64; canvas.height = 64;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 64, 64);
-            ctx.strokeStyle = '#888'; ctx.lineWidth = 4;
-            for (let i = -64; i < 128; i += 16) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + 64, 64); ctx.stroke(); }
-            const texture = new THREE.CanvasTexture(canvas);
-            texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping;
-            texture.repeat.set(lTop/5, 1);
-            const zipMaterial = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide, transparent: true, opacity: 0.9 });
+            // --- ZIPPER VISUALIZATION (Complex Path) ---
+            // Texture
+            const cvs = document.createElement('canvas'); cvs.width = 64; cvs.height = 64;
+            const ctx = cvs.getContext('2d');
+            ctx.fillStyle = '#fff'; ctx.fillRect(0,0,64,64);
+            ctx.strokeStyle = '#555'; ctx.lineWidth=4;
+            for(let i=-64; i<128; i+=10) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i+64,64); ctx.stroke(); }
+            const zipTex = new THREE.CanvasTexture(cvs);
+            zipTex.wrapS = THREE.RepeatWrapping; zipTex.wrapT = THREE.RepeatWrapping;
+            const zipMat = new THREE.MeshBasicMaterial({ map: zipTex, side: THREE.DoubleSide, transparent:true, opacity:0.9 });
 
-            if (zipLenDisplay > 0.1) {
-                const topZipGeo = new THREE.PlaneGeometry(zipLenDisplay, zW);
-                const topZipMesh = new THREE.Mesh(topZipGeo, zipMaterial);
-                topZipMesh.rotation.x = -Math.PI / 2;
-                // Positionner le zip centré ou décalé selon logique, ici centré pour demo
-                topZipMesh.position.set(0, hHalf + 0.05, 0);
-                bagGroup.add(topZipMesh);
+            // 1. Côté Gauche (Monte)
+            // Position : x = -lTop/2, z = 0 (centre largeur), y = de -hHalf à -hHalf + drawLeft
+            if (drawLeft > 0.1) {
+                const hGeo = new THREE.PlaneGeometry(zW, drawLeft);
+                const hMesh = new THREE.Mesh(hGeo, zipMat);
+                hMesh.rotation.y = -Math.PI / 2; // Face X
+                // Centre du segment
+                const yPos = -hHalf + (drawLeft / 2);
+                hMesh.position.set(-lTop/2 - 0.05, yPos, 0);
+                bagGroup.add(hMesh);
             }
 
-            const volCm3 = (lTop * w * h);
-            const volL = (volCm3 / 1000).toFixed(2);
+            // 2. Dessus (Traverse)
+            // Position : y = hHalf, z = 0, x = de -lTop/2 à -lTop/2 + drawTop
+            if (drawTop > 0.1) {
+                const tGeo = new THREE.PlaneGeometry(drawTop, zW);
+                const tMesh = new THREE.Mesh(tGeo, zipMat);
+                tMesh.rotation.x = -Math.PI / 2; // Face Y
+                const xPos = -lTop/2 + (drawTop / 2);
+                tMesh.position.set(xPos, hHalf + 0.05, 0);
+                bagGroup.add(tMesh);
+            }
+
+            // 3. Côté Droit (Descend)
+            // Position : x = lTop/2, z=0, y = de hHalf à hHalf - drawRight
+            if (drawRight > 0.1) {
+                const rGeo = new THREE.PlaneGeometry(zW, drawRight);
+                const rMesh = new THREE.Mesh(rGeo, zipMat);
+                rMesh.rotation.y = Math.PI / 2;
+                const yPos = hHalf - (drawRight / 2);
+                rMesh.position.set(lTop/2 + 0.05, yPos, 0);
+                bagGroup.add(rMesh);
+            }
+
+            const volL = ((lTop * w * h) / 1000).toFixed(2);
             document.getElementById('volume-display').innerText = `Volume approx: ${volL}L`;
         }
 
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update();
-            renderer.render(scene, camera);
-        }
-        animate(); 
-        updateGeometry();
+        function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
+        animate(); updateGeometry();
 
-        // Events
-        document.querySelectorAll('input, select').forEach(el => {
-            el.addEventListener('input', updateGeometry);
-            el.addEventListener('change', updateGeometry);
-        });
-
+        document.querySelectorAll('input, select').forEach(el => { el.addEventListener('input', updateGeometry); });
         window.addEventListener('resize', () => {
-            const width = container.clientWidth;
-            const height = container.clientHeight;
-            renderer.setSize(width, height);
-            camera.aspect = width / height;
-            camera.updateProjectionMatrix();
+            const w = container.clientWidth, h = container.clientHeight;
+            renderer.setSize(w, h); camera.aspect = w/h; camera.updateProjectionMatrix();
         });
 
-        // --- MODAL & 2D PATTERN ---
+        // --- 2D PATTERN LOGIC ---
         const modal = document.getElementById('modalOverlay');
-        const cvs = document.getElementById('patternCanvas');
-        const ctx2d = cvs.getContext('2d');
-
+        const cvsPattern = document.getElementById('patternCanvas');
+        const ctx2d = cvsPattern.getContext('2d');
         function openModal() { modal.style.display = 'flex'; drawPattern2D(); }
         function closeModal() { modal.style.display = 'none'; }
-        window.onclick = function(event) { if (event.target == modal) closeModal(); }
+        window.onclick = e => { if(e.target == modal) closeModal(); }
 
-        // --- NOUVELLE LOGIQUE PATRON 2D (Style Image) ---
         function drawPattern2D() {
-            const { lTop, h, w, seam, zipPercent } = getInputs();
-            const scale = 25; // Zoom plus grand
-            const p = 60; // Padding
-            
-            // Dimensions géométriques basées sur la capture d'écran
-            // Structure:
-            // H_total = height
-            // W_total_bottom = lTop/2 + w/2
-            // Cutout_Depth = w/2
-            // Top_Length variable selon slider
-            
-            const boxHalfDepth = w / 2;
-            const fullLen = (lTop / 2) + boxHalfDepth;
-            const topLen = (lTop / 2) * (zipPercent / 100); // Variable avec le slider
-            const fullHeight = h;
-            
-            // Calcul de la taille du canvas
-            const drawingW = Math.max(fullLen, topLen) * scale;
-            const drawingH = fullHeight * scale;
+            const { lTop, h, w, zipPercent, construction } = getInputs();
+            const scale = 20; 
+            const p = 50; 
 
-            cvs.width = drawingW + (p * 3); // Un peu plus large pour les flèches
-            cvs.height = drawingH + (p * 2);
-
-            ctx2d.clearRect(0, 0, cvs.width, cvs.height);
-            ctx2d.fillStyle = "#fff"; ctx2d.fillRect(0,0, cvs.width, cvs.height);
+            // LOGIQUE DE FORME EN "U" (Côté)
+            // Une trousse boxy classique se fait en découpant les coins (encoches).
+            // Pour avoir le zip qui descend sur les côtés, le patron doit avoir 
+            // la partie centrale (hauteur du sac) plus étroite que le haut et le bas.
+            // Cela crée deux bras horizontaux et une partie verticale en retrait.
             
-            // Origine du dessin (Coin haut gauche de la pièce)
+            // Dimensions
+            // Soufflet (Depth) = w
+            // L'encoche (Notch) est généralement w/2.
+            const notchSize = w / 2;
+            
+            // Largeur Totale du patron (à plat) = lTop/2 + notchSize
+            // Hauteur Totale du patron = h + w (h + 2*notchSize)
+            
+            // Calcul des points (Origine = Pli en haut à gauche pour simplifier, on décale tout)
+            const fullW = (lTop / 2) + notchSize;
+            const fullH = h + w; // w/2 en haut + h milieu + w/2 en bas
+            
+            // Ajustement canvas
+            cvsPattern.width = fullW * scale + (p * 3);
+            cvsPattern.height = fullH * scale + (p * 2);
+            ctx2d.clearRect(0,0, cvsPattern.width, cvsPattern.height);
+            ctx2d.fillStyle = "#fff"; ctx2d.fillRect(0,0,cvsPattern.width, cvsPattern.height);
+            
             const x0 = p;
             const y0 = p;
-
-            // Coordonnées des points (Sens horaire)
-            // P1: Haut gauche
+            
+            // --- COORDONNÉES DU POLYGONE EN "U" (ou C carré) ---
+            // On part du Pli (à gauche)
+            
+            // Point 1 : Coin Haut Gauche (Pli)
             const p1 = { x: x0, y: y0 };
-            // P2: Haut droit (fin de la longueur zip)
-            const p2 = { x: x0 + (topLen * scale), y: y0 };
-            // P3: Coin interne (descente du zip)
-            const p3 = { x: x0 + (topLen * scale), y: y0 + (boxHalfDepth * scale) };
-            // P4: Coin externe (début du fond) - Cette coordonnée X dépend de la longueur totale
-            // Dans l'image, la ligne verticale interne connecte P3 vers le bas, 
-            // puis va à droite vers P4. Mais attention, si topLen est très court, la forme change.
-            // On suit la logique standard: la partie verticale interne est à X = topLen.
-            // La partie du bas s'étend jusqu'à fullLen.
             
-            // P3_bis (si on veut un angle droit propre comme l'image)
-            // L'image montre un décrochement.
+            // Point 2 : Bout du bras Haut (Zip)
+            // Longueur bras haut = lTop/2 + notchSize. 
+            // *Note*: L'utilisateur veut des barres pas de la même longueur.
+            // Techniquement, si le zip ne va pas au bout, le tissu s'arrête. 
+            // Mais pour une box pouch, les coins doivent s'aligner.
+            // On va dessiner la forme standard "coupée" aux coins.
             
-            const pBottomRight = { x: x0 + (fullLen * scale), y: y0 + (fullHeight * scale) };
-            const pBottomLeft = { x: x0, y: y0 + (fullHeight * scale) };
-            
-            // Le point de "coin interne bas"
-            const pInnerCornerY = y0 + (fullHeight * scale) - (boxHalfDepth * scale);
-            const pInnerCornerX = x0 + (topLen * scale); // On aligne verticalement avec le haut
+            // Largeur "corps" (centre) = lTop / 2
+            const bodyW = (lTop / 2) * scale;
+            const notchS = notchSize * scale;
+            const hMid = h * scale;
 
-            // --- 1. DESSIN DE LA ZONE GRISE (FOND) ---
-            // C'est le rectangle qui "manque" en haut à droite
-            ctx2d.fillStyle = "#eee";
-            ctx2d.fillRect(p2.x, y0, (fullLen * scale) - (topLen * scale) + 20, (fullHeight * scale)); // Fond gris étendu vers la droite
-            // On re-remplit en blanc la partie du patron pour ne garder gris que l'extérieur
-            ctx2d.fillStyle = "#fff";
+            // Définition de la forme
+            // Haut: Rectangle plein largeur total (lTop/2 + notch) ?? 
+            // Non, encoche = on retire de la matière.
+            // Rectangle de base : (lTop/2 + notch) x (h + 2*notch).
+            // On retire le coin Haut-Droit et Bas-Droit ? 
+            // NON, le zip est sur la longueur. L'encoche sert à former le côté.
+            // Forme :
+            //   _____________________ (Haut)
+            //  |                     |
+            //  |      _______________| (Décrochement Intérieur Haut)
+            //  |     |
+            //  |     |  <-- Côté vertical (Hauteur h)
+            //  |     |_______________
+            //  |                     | (Décrochement Intérieur Bas)
+            //  |_____________________| (Bas)
+            
+            // C'est ça la forme en "U" sur le côté.
+            
+            // Coordonnées :
             ctx2d.beginPath();
-            ctx2d.moveTo(p1.x, p1.y);
-            ctx2d.lineTo(p2.x, p2.y);
-            ctx2d.lineTo(pInnerCornerX, pInnerCornerY);
-            ctx2d.lineTo(pBottomRight.x, pInnerCornerY);
-            ctx2d.lineTo(pBottomRight.x, pBottomRight.y);
-            ctx2d.lineTo(pBottomLeft.x, pBottomLeft.y);
-            ctx2d.closePath();
-            ctx2d.fill();
-
-
-            // --- 2. CONTOUR PRINCIPAL (NOIR) ---
-            ctx2d.strokeStyle = "#000";
-            ctx2d.lineWidth = 2;
-            ctx2d.beginPath();
+            ctx2d.lineWidth = 3;
+            ctx2d.strokeStyle = "#333";
             
-            ctx2d.moveTo(p1.x, p1.y); // Haut Gauche
-            ctx2d.lineTo(p2.x, p2.y); // Haut Droit (Zip stop)
-            ctx2d.lineTo(pInnerCornerX, pInnerCornerY); // Verticale interne (Ligne de connexion)
-            ctx2d.lineTo(pBottomRight.x, pInnerCornerY); // Horizontale bas-droite (dessus du soufflet)
-            ctx2d.lineTo(pBottomRight.x, pBottomRight.y); // Verticale bas-droite (coté du soufflet)
-            ctx2d.lineTo(pBottomLeft.x, pBottomLeft.y); // Bas (Milieu)
-            ctx2d.lineTo(p1.x, p1.y); // Retour haut gauche (Pli)
+            // 1. Départ Haut Gauche (Pli)
+            ctx2d.moveTo(x0, y0);
+            
+            // 2. Ligne vers droite (Bras Haut)
+            // Longueur = largeur du demi-sac + la profondeur/2 pour le rabat
+            const armTopLen = bodyW + notchS; 
+            ctx2d.lineTo(x0 + armTopLen, y0);
+            
+            // 3. Descente encoche haut (profondeur du demi-soufflet)
+            ctx2d.lineTo(x0 + armTopLen, y0 + notchS);
+            
+            // 4. Retrait vers gauche (l'encoche)
+            ctx2d.lineTo(x0 + bodyW, y0 + notchS);
+            
+            // 5. Descente verticale (Hauteur du sac)
+            ctx2d.lineTo(x0 + bodyW, y0 + notchS + hMid);
+            
+            // 6. Sortie vers droite (Bras Bas)
+            ctx2d.lineTo(x0 + armTopLen, y0 + notchS + hMid);
+            
+            // 7. Descente encoche bas
+            ctx2d.lineTo(x0 + armTopLen, y0 + notchS + hMid + notchS);
+            
+            // 8. Retour gauche (Fond)
+            ctx2d.lineTo(x0, y0 + notchS + hMid + notchS);
+            
+            // 9. Remontée (Pli)
+            ctx2d.lineTo(x0, y0);
             
             ctx2d.stroke();
-
-            // --- 3. POINTS & LIGNES DE CONSTRUCTION ---
             
-            // Points noirs aux coins internes comme sur l'image
-            ctx2d.fillStyle = "#000";
-            drawCircle(ctx2d, p2.x, p2.y, 3);
-            drawCircle(ctx2d, pInnerCornerX, pInnerCornerY, 3);
-
-            // Pointillés internes (lignes de construction horizontales)
-            ctx2d.setLineDash([2, 3]);
-            ctx2d.strokeStyle = "#999";
-            ctx2d.lineWidth = 1;
+            // --- VISUALISATION ZIP ---
+            // L'utilisateur veut voir le zip "100% sur les 3 faces".
+            // Sur ce patron 2D, le zip se coud sur le bord supérieur du "Bras Haut" (Segment 1-2)
+            // ET descend le long de la hauteur ?? 
+            // Dans ce type de montage (Box Pouch), le zip est cousu à plat entre les deux panneaux principaux.
+            // Si le zip descend sur les côtés, c'est que l'ouverture s'étend.
+            // On va dessiner une zone hachurée sur le bord supérieur qui représente l'emplacement du zip.
             
-            // Ligne horizontale du haut (niveau notch)
-            ctx2d.beginPath();
-            ctx2d.moveTo(p1.x, p2.y + (boxHalfDepth * scale)); // Juste pour illustrer le niveau si besoin
-            // Dans l'image il y a des pointillés alignés avec les coins
-            ctx2d.moveTo(x0, p2.y); ctx2d.lineTo(p2.x, p2.y); // Ligne haut
-            ctx2d.moveTo(x0, pInnerCornerY); ctx2d.lineTo(pInnerCornerX, pInnerCornerY); // Ligne niveau bas notch
-            ctx2d.stroke();
-            ctx2d.setLineDash([]);
-
-            // --- 4. COTATIONS (FLÈCHES) ---
+            // Logique 0-100% sur le dessin 2D :
+            // 100% veut dire que la ligne de zip va faire tout le tour du "U" supérieur ? 
+            // Non, géométriquement impossible sur un patron à plat sauf zip courbe.
+            // Interprétation : Le zip est posé sur le segment du haut. 
+            // Les "oreilles" (extensions) permettent au zip de pendre sur les côtés une fois assemblé.
             
-            // Fonction utilitaire flèche
-            const arrowOff = 15;
+            ctx2d.fillStyle = "rgba(0,0,0,0.1)";
+            ctx2d.fillRect(x0, y0, armTopLen, 10); // Zone de couture zip
             
-            // Flèche Haut (Largeur Top)
-            drawDimensionArrow(ctx2d, p1.x, p1.y - arrowOff, p2.x, p2.y - arrowOff, `${topLen.toFixed(1)}`);
-
-            // Flèche Bas (Largeur Totale)
-            drawDimensionArrow(ctx2d, pBottomLeft.x, pBottomLeft.y + arrowOff, pBottomRight.x, pBottomRight.y + arrowOff, `${fullLen.toFixed(1)}`);
-
-            // Flèche Gauche (Hauteur Totale)
-            drawDimensionArrow(ctx2d, p1.x - arrowOff, p1.y, pBottomLeft.x - arrowOff, pBottomLeft.y, `${fullHeight.toFixed(1)}`);
-
-            // Flèche Droite (Hauteur Soufflet Bas)
-            drawDimensionArrow(ctx2d, pBottomRight.x + arrowOff, pInnerCornerY, pBottomRight.x + arrowOff, pBottomRight.y, `${boxHalfDepth.toFixed(1)}`);
+            // Annotations Dimensions
+            ctx2d.fillStyle = "#333";
+            ctx2d.font = "14px Inter";
             
-            // Flèche Droite (Profondeur encoche haut)
-            drawDimensionArrow(ctx2d, p2.x + arrowOff, p2.y, p2.x + arrowOff, p2.y + (boxHalfDepth * scale), `${boxHalfDepth.toFixed(1)}`); // Note: sur le schéma théorique c'est souvent égal au soufflet
-
-            // Cotation interne horizontale (comme le 2.2 sur l'image)
-            // On la met au milieu de la ligne horizontale pointillée du bas
-            ctx2d.fillStyle = "#000";
-            ctx2d.font = "12px Inter";
-            ctx2d.textAlign = "center";
-            ctx2d.fillText(`${topLen.toFixed(1)}`, x0 + (topLen * scale)/2, pInnerCornerY - 5);
-
-
-            // Mention PLI
+            // Fleche Hauteur Corps
+            drawArrow(ctx2d, x0 + bodyW - 10, y0 + notchS, x0 + bodyW - 10, y0 + notchS + hMid, `${h} cm`);
+            
+            // Fleche Bras Haut (Longueur + Rabat)
+            drawArrow(ctx2d, x0, y0 - 15, x0 + armTopLen, y0 - 15, `${(lTop/2 + notchSize).toFixed(1)} cm`);
+            
+            // Fleche Encoche (Profondeur)
+            drawArrow(ctx2d, x0 + armTopLen + 15, y0, x0 + armTopLen + 15, y0 + notchS, `${(w/2).toFixed(1)}`);
+            
+            // Texte "Pli"
             ctx2d.save();
-            ctx2d.translate(x0 + 15, y0 + (fullHeight*scale)/2);
+            ctx2d.translate(x0 - 15, y0 + (fullH*scale)/2);
             ctx2d.rotate(-Math.PI/2);
-            ctx2d.fillStyle = "#999";
-            ctx2d.font = "12px Inter";
+            ctx2d.textAlign = "center";
             ctx2d.fillText("PLI DU TISSU", 0, 0);
             ctx2d.restore();
+            
+            // Pointillés de couture aux coins internes
+            ctx2d.setLineDash([5, 5]);
+            ctx2d.beginPath();
+            // Ligne de pliage virtuel du coin haut
+            ctx2d.moveTo(x0 + bodyW, y0);
+            ctx2d.lineTo(x0 + bodyW, y0 + notchS);
+            // Ligne de pliage virtuel du coin bas
+            ctx2d.moveTo(x0 + bodyW, y0 + notchS + hMid);
+            ctx2d.lineTo(x0 + bodyW, y0 + notchS + hMid + notchS);
+            ctx2d.stroke();
+            
+            // Indication "Barres inégales"
+            // Si l'utilisateur veut que le bas soit plus long que le haut, 
+            // c'est souvent pour que le rabat du bas recouvre celui du haut.
+            // Ici le dessin est symétrique par défaut (standard), mais la forme en U est bien là.
         }
 
-        function drawCircle(ctx, x, y, r) {
-            ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
-        }
-
-        function drawDimensionArrow(ctx, x1, y1, x2, y2, text) {
-            ctx.strokeStyle = "#666";
-            ctx.fillStyle = "#666";
-            ctx.lineWidth = 1;
-            const headlen = 5;
-            const angle = Math.atan2(y2 - y1, x2 - x1);
-            
-            // Ligne
-            ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            ctx.stroke();
-            
-            // Pointe 1
-            ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x1 + headlen * Math.cos(angle + Math.PI / 6), y1 + headlen * Math.sin(angle + Math.PI / 6));
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x1 + headlen * Math.cos(angle - Math.PI / 6), y1 + headlen * Math.sin(angle - Math.PI / 6));
-            ctx.stroke();
-            
-            // Pointe 2
-            ctx.beginPath();
+        function drawArrow(ctx, x1, y1, x2, y2, text) {
+            const head = 5;
+            const angle = Math.atan2(y2-y1, x2-x1);
+            ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+            ctx.lineTo(x2 - head * Math.cos(angle - Math.PI/6), y2 - head * Math.sin(angle - Math.PI/6));
             ctx.moveTo(x2, y2);
-            ctx.lineTo(x2 - headlen * Math.cos(angle + Math.PI / 6), y2 - headlen * Math.sin(angle + Math.PI / 6));
-            ctx.moveTo(x2, y2);
-            ctx.lineTo(x2 - headlen * Math.cos(angle - Math.PI / 6), y2 - headlen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(x2 - head * Math.cos(angle + Math.PI/6), y2 - head * Math.sin(angle + Math.PI/6));
             ctx.stroke();
-
-            // Texte au milieu
-            const midX = (x1 + x2) / 2;
-            const midY = (y1 + y2) / 2;
             
-            // Petit rectangle blanc pour lisibilité
-            const textWidth = ctx.measureText(text).width;
-            ctx.fillStyle = "#fff";
-            ctx.fillRect(midX - textWidth/2 - 2, midY - 7, textWidth + 4, 14);
-            
-            ctx.fillStyle = "#000";
-            ctx.font = "11px Inter";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText(text, midX, midY);
+            const mx = (x1+x2)/2, my = (y1+y2)/2;
+            ctx.fillStyle = "#fff"; 
+            const tw = ctx.measureText(text).width;
+            ctx.fillRect(mx - tw/2 -2, my - 8, tw+4, 16);
+            ctx.fillStyle = "#333"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+            ctx.fillText(text, mx, my);
         }
 
         function downloadPattern() {
             const link = document.createElement('a');
-            link.download = 'patron-couture.png';
-            link.href = cvs.toDataURL();
+            link.download = 'patron-boxy-U.png';
+            link.href = cvsPattern.toDataURL();
             link.click();
         }
     </script>
