@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Générateur de Pattern - Box Pouch</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
@@ -144,9 +144,9 @@
     <div class="sidebar">
         <h1>Générateur de Pattern</h1>
         <p>Créez votre patron de trousse ou sac "Boxy".</p>
-        <h2>Nouveau Design</h2>
+        <h2>Nouveau Design Minimaliste</h2>
         <p>
-            Le patron 2D adopte maintenant un style graphique épuré, professionnel et contrasté, inspiré des standards techniques, pour une lecture optimale des cotes et des repères.
+            Le patron 2D adopte un style graphique épuré avec des traits fins et une typographie légère pour une lecture claire et moderne.
         </p>
     </div>
 
@@ -350,7 +350,7 @@
             renderer.setSize(w, h); camera.aspect = w/h; camera.updateProjectionMatrix();
         });
 
-        // --- 2D PATTERN LOGIC (STYLE MISE À JOUR) ---
+        // --- 2D PATTERN LOGIC (STYLE MINIMALISTE FIN) ---
         const modal = document.getElementById('modalOverlay');
         const cvsPattern = document.getElementById('patternCanvas');
         const ctx2d = cvsPattern.getContext('2d');
@@ -361,7 +361,7 @@
         function drawPattern2D() {
             const { lMain, notchH, midH } = getInputs();
             const scale = 25; 
-            const p = 80; // Plus de marge pour les cotes
+            const p = 80; 
 
             const bottomW_val = lMain;
             const bodyW_val = lMain / 2;
@@ -388,8 +388,8 @@
             
             // --- DESSIN DU POLYGONE ---
             ctx2d.beginPath();
-            ctx2d.lineWidth = 4; // Ligne plus épaisse
-            ctx2d.strokeStyle = "#000"; // Noir pur
+            ctx2d.lineWidth = 2; // Ligne fine
+            ctx2d.strokeStyle = "#000"; 
             ctx2d.moveTo(x0, y0);
             ctx2d.lineTo(x0 + topW, y0);
             ctx2d.lineTo(x0 + topW, y0 + armH);
@@ -401,19 +401,19 @@
             ctx2d.lineTo(x0, y0);
             ctx2d.stroke();
 
-            // --- LIGNE DE PLI ÉPAISSE ---
+            // --- LIGNE DE PLI ÉPAISSE (Mais plus fine qu'avant) ---
             ctx2d.beginPath();
-            ctx2d.lineWidth = 8;
+            ctx2d.lineWidth = 4;
             ctx2d.moveTo(x0, y0 - 10);
             ctx2d.lineTo(x0, y0 + totalH + 10);
             ctx2d.stroke();
 
-            // --- POINTS D'ANGLE ---
+            // --- POINTS D'ANGLE (Plus petits) ---
             ctx2d.fillStyle = "#000";
             drawPoint(ctx2d, x0 + bodyW, y0 + armH);
             drawPoint(ctx2d, x0 + bodyW, y0 + armH + middleH);
 
-            // --- COTATIONS (STYLE NOIR ET BLANC) ---
+            // --- COTATIONS (STYLE MINIMALISTE) ---
             const arrowOffset = 25;
             
             drawStyledArrow(ctx2d, x0, y0 - arrowOffset, x0 + topW, y0 - arrowOffset, `${topW_val.toFixed(1)} cm`, 'top');
@@ -423,36 +423,35 @@
             drawStyledArrow(ctx2d, x0 + bottomW + arrowOffset, y0 + armH + middleH, x0 + bottomW + arrowOffset, y0 + totalH, `${armH_val.toFixed(1)} cm`, 'right');
             drawStyledArrow(ctx2d, x0, y0 + armH + middleH/2, x0 + bodyW, y0 + armH + middleH/2, `${bodyW_val.toFixed(1)} cm`, 'top');
             
-            ctx2d.font = "bold 14px Inter";
+            ctx2d.font = "13px Inter"; // Police plus fine
             ctx2d.textAlign = "center";
             ctx2d.fillText(`${middleH_val.toFixed(1)} cm`, x0 + bodyW + (bottomW-bodyW)/2, y0 + armH + middleH/2);
 
-            // Pointillés
+            // Pointillés fins
             drawStyledDashedLine(ctx2d, x0 + 4, y0 + armH, x0 + bodyW, y0 + armH);
             drawStyledDashedLine(ctx2d, x0 + 4, y0 + armH + middleH, x0 + bodyW, y0 + armH + middleH);
 
-            // Texte "Pli"
+            // Texte "Pli" fin
             ctx2d.save();
             ctx2d.translate(x0 - 25, y0 + (totalH/2));
             ctx2d.rotate(-Math.PI/2);
-            ctx2d.font = "bold 16px Inter";
+            ctx2d.font = "15px Inter";
             ctx2d.fillText("PLI DU TISSU", 0, 0);
             ctx2d.restore();
         }
 
         function drawPoint(ctx, x, y) {
             ctx.beginPath();
-            ctx.arc(x, y, 6, 0, Math.PI * 2);
+            ctx.arc(x, y, 3, 0, Math.PI * 2); // Rayon réduit
             ctx.fill();
         }
 
         function drawStyledArrow(ctx, x1, y1, x2, y2, text, textPos) {
-            ctx.strokeStyle = "#000"; ctx.fillStyle = "#000"; ctx.lineWidth = 2;
-            const head = 10; const angle = Math.atan2(y2-y1, x2-x1);
+            ctx.strokeStyle = "#000"; ctx.fillStyle = "#000"; ctx.lineWidth = 1; // Ligne très fine
+            const head = 7; const angle = Math.atan2(y2-y1, x2-x1); // Tête réduite
             
             ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
             
-            // Têtes de flèche pleines
             ctx.beginPath(); ctx.moveTo(x1, y1);
             ctx.lineTo(x1 + head * Math.cos(angle + Math.PI/8), y1 + head * Math.sin(angle + Math.PI/8));
             ctx.lineTo(x1 + head * Math.cos(angle - Math.PI/8), y1 + head * Math.sin(angle - Math.PI/8));
@@ -462,7 +461,7 @@
             ctx.lineTo(x2 - head * Math.cos(angle - Math.PI/8), y2 - head * Math.sin(angle - Math.PI/8));
             ctx.fill();
 
-            ctx.font = "bold 14px Inter"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+            ctx.font = "13px Inter"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; // Police fine
             const mx = (x1+x2)/2, my = (y1+y2)/2;
             let tx = mx, ty = my;
             if(textPos === 'top') ty -= 15;
@@ -473,14 +472,14 @@
         }
 
         function drawStyledDashedLine(ctx, x1, y1, x2, y2) {
-            ctx.setLineDash([6, 6]); ctx.lineWidth = 2; ctx.strokeStyle = "#000";
+            ctx.setLineDash([4, 4]); ctx.lineWidth = 1; ctx.strokeStyle = "#000"; // Pointillés fins
             ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
             ctx.setLineDash([]);
         }
 
         function downloadPattern() {
             const link = document.createElement('a');
-            link.download = 'patron-boxy-style.png';
+            link.download = 'patron-boxy-minimalist.png';
             link.href = cvsPattern.toDataURL();
             link.click();
         }
